@@ -147,7 +147,7 @@ export async function getWorkoutBySlugOrId(
     .eq(isUuid ? "id" : "slug", identifier)
     .eq("tenant_id", tenantId)
     .eq("is_published", true)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
 

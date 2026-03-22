@@ -16,7 +16,7 @@ async function requireSuperAdmin() {
   const user = await getAuthUser();
   if (!user) return null;
   const client = await createServerClient();
-  const { data } = await client.from("profiles").select("role").eq("id", user.id).single();
+  const { data } = await client.from("profiles").select("role").eq("id", user.id).maybeSingle();
   return data?.role === "super_admin" ? user : null;
 }
 

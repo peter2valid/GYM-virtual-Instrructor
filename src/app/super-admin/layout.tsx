@@ -1,10 +1,11 @@
-import Link from "next/link";
 import { ROUTES } from "@/lib/constants";
+import { AdminSidebarNav } from "@/components/admin/AdminSidebarNav";
+import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
 
 const navItems = [
   { href: ROUTES.SUPER_ADMIN, label: "Dashboard" },
-  { href: ROUTES.SUPER_ADMIN_GYMS, label: "All Gyms" },
-  { href: ROUTES.SUPER_ADMIN_SUBSCRIPTIONS, label: "Subscriptions" },
+  { href: ROUTES.SUPER_ADMIN_GYMS, label: "All Gyms", shortLabel: "Gyms" },
+  { href: ROUTES.SUPER_ADMIN_SUBSCRIPTIONS, label: "Subscriptions", shortLabel: "Billing" },
   { href: ROUTES.SUPER_ADMIN_SUPPORT, label: "Support" },
 ];
 
@@ -21,17 +22,7 @@ export default function SuperAdminLayout({
             Super Admin
           </span>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex h-9 items-center rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <AdminSidebarNav items={navItems} />
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center border-b border-border px-4 md:hidden">
@@ -39,8 +30,9 @@ export default function SuperAdminLayout({
             Super Admin
           </span>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 pb-20 md:p-6 md:pb-6">{children}</main>
       </div>
+      <AdminMobileNav items={navItems} />
     </div>
   );
 }

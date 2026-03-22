@@ -1,33 +1,28 @@
+import { redirect, notFound } from "next/navigation";
+import { createClient } from "@/lib/supabase/server";
+
 interface Props {
   params: Promise<{ gymSlug: string; sessionId: string }>;
 }
 
+// Old session route — look up the session's workout and redirect to the real session page.
+// If already completed, redirect to history. If not found, 404.
 export default async function SessionPage({ params }: Props) {
-  const { sessionId } = await params;
+  const { gymSlug, sessionId } = await params;
 
-  return (
-    <div className="flex min-h-[80vh] flex-col px-4 py-6">
-      <div className="mb-6 space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-          Active Session
-        </p>
-        <h1 className="text-xl font-bold text-foreground">
-          Workout in Progress
-        </h1>
-      </div>
+  const client = await createClient();
+  const { data: session } = await client
+    .from("workout_sessions")
+    .select("workout_id, status")
+    .eq("id", sessionId)
+    .maybeSingle();
 
-      <div className="flex flex-1 items-center justify-center">
-        <div className="w-full max-w-sm rounded-lg border border-border bg-card p-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Live workout session engine will be built in Phase 1.
-            <br />
-            Session:{" "}
-            <span className="font-mono text-xs text-foreground">
-              {sessionId}
-            </span>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  if (!session) notFound();
+
+  if (session.status === "completed") {
+    redirect(`/g/${gymSlug}/history`);
+  }
+
+  // Active/in-progress — redirect to the real workout session page
+  redirect(`/g/${gymSlug}/workouts/${session.workout_id}/session`);
 }

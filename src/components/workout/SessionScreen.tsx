@@ -20,6 +20,7 @@ import { StepProgress } from "./StepProgress";
 import { WorkoutTimer } from "./WorkoutTimer";
 import { CompletionScreen } from "./CompletionScreen";
 import { useWorkoutSessionStore } from "@/stores/workout-session-store";
+import { useHaptic } from "@/hooks/useHaptic";
 import type { Workout, WorkoutStep } from "@/types";
 
 const ICONS = {
@@ -46,6 +47,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
 
   const { startSession, nextStep: storeNext, completeSession } =
     useWorkoutSessionStore();
+  const haptic = useHaptic();
 
   useEffect(() => {
     startSession(workout.id, workout.steps.length);
@@ -61,7 +63,9 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
   const IconComponent = ICONS[iconName as keyof typeof ICONS] ?? Dumbbell;
 
   function handleNext() {
+    haptic.tap();
     if (isLast) {
+      haptic.success();
       completeSession();
       setIsComplete(true);
     } else {
@@ -73,6 +77,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
 
   function handlePrev() {
     if (!isFirst) {
+      haptic.tap();
       setDirection(-1);
       setStepIndex((i) => i - 1);
     }

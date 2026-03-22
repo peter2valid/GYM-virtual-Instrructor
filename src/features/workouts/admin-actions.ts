@@ -45,7 +45,7 @@ async function getAdminTenant() {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return null;
@@ -55,7 +55,29 @@ async function getAdminTenant() {
 
 // ─── createWorkout ────────────────────────────────────────────────────────────
 
+const VALID_DIFFICULTIES = ["beginner", "intermediate", "advanced"] as const;
+const VALID_CATEGORIES = [
+  "Strength","Cardio","HIIT","Flexibility","Yoga","Pilates",
+  "CrossFit","Bodyweight","Stretching","Recovery","Warmup","Full Body",
+];
+
+function validateWorkoutInput(input: WorkoutInput): string | null {
+  if (!input.title?.trim()) return "Title is required.";
+  if (!VALID_DIFFICULTIES.includes(input.difficulty as typeof VALID_DIFFICULTIES[number]))
+    return "Invalid difficulty.";
+  if (!VALID_CATEGORIES.includes(input.category)) return "Invalid category.";
+  if (input.estimatedDurationMinutes < 1 || input.estimatedDurationMinutes > 240)
+    return "Duration must be between 1 and 240 minutes.";
+  for (const step of input.steps) {
+    if (!step.title?.trim()) return "All steps must have a title.";
+  }
+  return null;
+}
+
 export async function createWorkout(input: WorkoutInput): Promise<ActionResult> {
+  const validationError = validateWorkoutInput(input);
+  if (validationError) return { error: validationError };
+
   const ctx = await getAdminTenant();
   if (!ctx) return { error: "Unauthorized" };
 
@@ -118,6 +140,9 @@ export async function updateWorkout(
   workoutId: string,
   input: WorkoutInput
 ): Promise<ActionResult> {
+  const validationError = validateWorkoutInput(input);
+  if (validationError) return { error: validationError };
+
   const ctx = await getAdminTenant();
   if (!ctx) return { error: "Unauthorized" };
 
@@ -138,8 +163,13 @@ export async function updateWorkout(
 
   if (wErr) return { error: wErr.message };
 
-  // Replace all steps
-  await client.from("workout_steps").delete().eq("workout_id", workoutId);
+  // Replace all steps — delete old ones first, then insert new ones
+  const { error: deleteErr } = await client
+    .from("workout_steps")
+    .delete()
+    .eq("workout_id", workoutId);
+
+  if (deleteErr) return { error: deleteErr.message };
 
   if (input.steps.length > 0) {
     const stepRows = input.steps.map((s, i) => ({
@@ -169,9 +199,11 @@ export async function deleteWorkout(workoutId: string): Promise<ActionResult> {
 
   const { client, tenantId } = ctx;
 
-  // Delete steps first (FK constraint)
-  await client.from("workout_steps").delete().eq("workout_id", workoutId);
-  await client.from("tenant_workout_preferences").delete().eq("workout_id", workoutId);
+  // Delete steps and preferences first (FK constraints)
+  await Promise.all([
+    client.from("workout_steps").delete().eq("workout_id", workoutId),
+    client.from("tenant_workout_preferences").delete().eq("workout_id", workoutId),
+  ]);
 
   const { error } = await client
     .from("workouts")

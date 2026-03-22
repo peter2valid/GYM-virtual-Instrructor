@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     .from("profiles")
     .select("tenant_id")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   // Verify the tenant belongs to this user
   const resolvedTenantId = profile?.tenant_id ?? tenantId;
@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     .from("tenants")
     .select("name, slug")
     .eq("id", resolvedTenantId)
-    .single();
+    .maybeSingle();
 
   if (!tenant) return NextResponse.json({ error: "Gym not found" }, { status: 404 });
 

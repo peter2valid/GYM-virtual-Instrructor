@@ -22,11 +22,27 @@ export async function POST(req: NextRequest) {
   const event = JSON.parse(body);
 
   if (event.event === "charge.success") {
-    const { metadata, customer } = event.data;
-    const { tenant_id, plan } = metadata ?? {};
+    const { metadata, customer } = event.data ?? {};
+    const tenant_id: string | undefined = metadata?.tenant_id;
+    const plan: string | undefined = metadata?.plan;
+    const reference: string | undefined = event.data?.reference;
 
-    if (!tenant_id || !plan) {
+    // Skip if metadata is missing or plan is invalid
+    if (!tenant_id || !plan || !["track", "premium"].includes(plan)) {
       return NextResponse.json({ received: true });
+    }
+
+    // Idempotency: check if this reference was already processed
+    if (reference) {
+      const { data: existing } = await adminClient
+        .from("tenants")
+        .select("paystack_customer_id, subscription_status")
+        .eq("id", tenant_id)
+        .maybeSingle();
+      if (existing?.subscription_status === "active") {
+        // Already activated — skip to avoid double-processing
+        return NextResponse.json({ received: true });
+      }
     }
 
     // Activate the tenant's subscription
@@ -66,10 +82,10 @@ export async function POST(req: NextRequest) {
       .from("tenants")
       .select("name")
       .eq("id", tenant_id)
-      .single();
+      .maybeSingle();
 
-    const adminEmail = customer?.email ?? event.data?.customer?.email ?? "";
-    if (adminEmail && tenantRow?.name) {
+    const adminEmail: string = (customer?.email ?? event.data?.customer?.email ?? "").trim();
+    if (adminEmail && adminEmail.includes("@") && tenantRow?.name) {
       const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
       const amountRaw = event.data?.amount ?? 0;
       const currency = event.data?.currency ?? "NGN";
@@ -93,10 +109,31 @@ export async function POST(req: NextRequest) {
   if (event.event === "subscription.disable" || event.event === "invoice.payment_failed") {
     const tenant_id = event.data?.metadata?.tenant_id;
     if (tenant_id) {
+      const newStatus = event.event === "invoice.payment_failed" ? "past_due" : "cancelled";
       await adminClient
         .from("tenants")
-        .update({ subscription_status: event.event === "invoice.payment_failed" ? "past_due" : "cancelled" })
+        .update({ subscription_status: newStatus })
         .eq("id", tenant_id);
+
+      // Downgrade feature flags back to starter level on cancellation/past_due
+      if (newStatus === "cancelled") {
+        const paidFlags = [
+          "member_login",
+          "attendance_tracking",
+          "workout_history",
+          "member_dashboard",
+          "premium_branding",
+          "advanced_analytics",
+          "custom_recommendations",
+        ];
+        for (const feature_key of paidFlags) {
+          await adminClient
+            .from("feature_flags")
+            .update({ enabled: false })
+            .eq("tenant_id", tenant_id)
+            .eq("feature_key", feature_key);
+        }
+      }
     }
   }
 

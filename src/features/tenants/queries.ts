@@ -55,7 +55,7 @@ export async function getTenantBySlug(slug: string): Promise<Tenant | null> {
     .select("*")
     .eq("slug", slug)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return mapTenantRow(data);
@@ -74,7 +74,7 @@ export async function getTenantById(id: string): Promise<Tenant | null> {
     .select("*")
     .eq("id", id)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return mapTenantRow(data);
@@ -102,7 +102,7 @@ export async function getTenantSettings(
     .from("tenant_settings")
     .select("*")
     .eq("tenant_id", tenantId)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return mapSettingsRow(data);

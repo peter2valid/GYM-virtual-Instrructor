@@ -1,7 +1,6 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createGym } from "@/features/onboarding/actions";
 import { createBrowserSupabaseClient } from "@/lib/supabase";
@@ -75,8 +74,6 @@ export default function OnboardPage() {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 function OnboardPageInner() {
-  const router = useRouter();
-
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -151,7 +148,7 @@ function OnboardPageInner() {
       }
     }
 
-    router.push(ROUTES.GYM_ADMIN);
+    window.location.href = ROUTES.GYM_ADMIN;
   }
 
   const steps = ["Your Gym", "Your Account", "Choose a Plan"];

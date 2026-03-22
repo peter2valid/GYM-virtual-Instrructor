@@ -22,7 +22,7 @@ export async function updateTenantProfile(input: TenantSettingsInput): Promise<A
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return { error: "Unauthorized" };

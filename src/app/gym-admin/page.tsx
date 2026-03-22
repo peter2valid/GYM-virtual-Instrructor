@@ -16,7 +16,7 @@ export default async function GymAdminDashboard() {
     .from("profiles")
     .select("tenant_id, role, full_name")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return (

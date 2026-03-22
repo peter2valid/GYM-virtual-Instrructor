@@ -23,7 +23,7 @@ export default async function EditWorkoutPage({ params }: Props) {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return <div className="py-24 text-center text-sm text-muted-foreground">Access denied.</div>;
@@ -34,7 +34,7 @@ export default async function EditWorkoutPage({ params }: Props) {
     .select("*, workout_steps(id, step_order, title, instruction_text, duration_seconds, rest_seconds, exercise_id)")
     .eq("id", workoutId)
     .eq("tenant_id", profile.tenant_id)
-    .single();
+    .maybeSingle();
 
   if (!workout) notFound();
 

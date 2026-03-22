@@ -103,4 +103,14 @@
   .input {
     @apply flex h-11 w-full rounded-xl border border-border bg-background px-3.5 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50;
   }
+
+  /* Safe-area padding for devices with home indicator (iPhone notch) */
+  .safe-area-pb {
+    padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* Smooth page transitions via View Transitions API */
+@view-transition {
+  navigation: auto;
 }

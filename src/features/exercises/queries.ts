@@ -14,7 +14,7 @@ export async function getExerciseById(id: string): Promise<Exercise | null> {
     .select("*")
     .eq("id", id)
     .eq("is_active", true)
-    .single();
+    .maybeSingle();
 
   if (error || !data) return null;
   return mapExerciseRow(data);

@@ -15,6 +15,9 @@ import { DIFFICULTY_STYLES, formatDuration } from "@/lib/utils/workout-ui";
 import { getCategoryIcon } from "@/lib/utils/gym-icons";
 import type { WorkoutCategory } from "@/types";
 
+// Gym home: cache for 60s, revalidate in background
+export const revalidate = 60;
+
 interface Props {
   params: Promise<{ gymSlug: string }>;
 }
@@ -53,7 +56,7 @@ export default async function GymLandingPage({ params }: Props) {
   ) as Record<WorkoutCategory, number>;
 
   return (
-    <main className="flex-1 w-full mx-auto max-w-2xl px-5 pb-16">
+    <main className="flex-1 w-full mx-auto max-w-2xl px-5 pb-24">
       {/* ── Top nav ───────────────────────────────────────────────────── */}
       <nav className="flex items-center justify-between py-6">
         <div className="flex items-center gap-2">
@@ -98,15 +101,27 @@ export default async function GymLandingPage({ params }: Props) {
           {tenant.welcomeMessage ?? "Pick a workout and start. No account needed."}
         </p>
 
-        {/* Streak badge for logged-in members */}
-        {memberStats && memberStats.currentStreak > 0 && (
+        {/* Personalised motivational badge */}
+        {memberStats && memberStats.currentStreak > 0 ? (
           <div className="mt-5 inline-flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/10 px-3.5 py-2">
             <Flame className="h-4 w-4 text-orange-500" />
             <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
-              {memberStats.currentStreak} day streak — keep it up!
+              {memberStats.currentStreak >= 7
+                ? `🔥 ${memberStats.currentStreak}-day streak! You're unstoppable!`
+                : memberStats.currentStreak >= 3
+                ? `${memberStats.currentStreak} day streak — you're on a roll!`
+                : `${memberStats.currentStreak} day streak — keep it up!`}
             </span>
           </div>
-        )}
+        ) : memberStats && memberStats.totalSessions > 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">
+            Welcome back{" "}
+            <span className="font-semibold text-foreground">
+              — {memberStats.totalSessions} workout{memberStats.totalSessions !== 1 ? "s" : ""} completed
+            </span>
+            . Ready for one more?
+          </p>
+        ) : null}
 
         {/* Dominant CTA */}
         <Link

@@ -24,7 +24,7 @@ export default async function SuperAdminSubscriptionsPage() {
   if (!user) redirect("/login?next=/super-admin/subscriptions");
 
   const client = await createServerSupabaseClient();
-  const { data: profile } = await client.from("profiles").select("role").eq("id", user.id).single();
+  const { data: profile } = await client.from("profiles").select("role").eq("id", user.id).maybeSingle();
   if (profile?.role !== "super_admin") {
     return <div className="py-24 text-center text-sm text-muted-foreground">Access denied.</div>;
   }

@@ -341,7 +341,9 @@ export async function getTenantAnalyticsData(
   const retentionChange =
     activePrevMonth > 0
       ? Math.round(((activeThisMonth - activePrevMonth) / activePrevMonth) * 100)
-      : 0;
+      : activeThisMonth > 0
+        ? 100  // new gym: went from 0 → N, treat as +100%
+        : 0;
 
   // Popular workouts — group by workout_id
   const workoutMap: Record<
@@ -581,12 +583,18 @@ function emptyWeeklyData(): { week: string; count: number }[] {
 
 function buildWeeklyData(dates: string[]): { week: string; count: number }[] {
   const weeks: { week: string; count: number }[] = [];
+  // Snap to Monday of the current week (ISO week start)
+  const now = new Date();
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0 … Sun=6
+  const thisMonday = new Date(now);
+  thisMonday.setDate(now.getDate() - dayOfWeek);
+  thisMonday.setHours(0, 0, 0, 0);
+
   for (let i = 7; i >= 0; i--) {
-    const start = new Date();
-    start.setDate(start.getDate() - i * 7 - start.getDay());
-    start.setHours(0, 0, 0, 0);
+    const start = new Date(thisMonday);
+    start.setDate(thisMonday.getDate() - i * 7);
     const end = new Date(start);
-    end.setDate(end.getDate() + 7);
+    end.setDate(start.getDate() + 7);
     const count = dates.filter((dt) => {
       const d = new Date(dt);
       return d >= start && d < end;

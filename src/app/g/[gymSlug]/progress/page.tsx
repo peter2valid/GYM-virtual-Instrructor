@@ -58,7 +58,7 @@ export default async function ProgressPage({ params }: Props) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 py-6">
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 py-6 pb-24">
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard

@@ -6,6 +6,7 @@ import { CheckCircle2, RotateCcw, ArrowRight, Clock } from "lucide-react";
 import { motion } from "framer-motion";
 import { saveWorkoutSession } from "@/features/sessions/actions";
 import { useWorkoutSessionStore } from "@/stores/workout-session-store";
+import { useHaptic } from "@/hooks/useHaptic";
 import type { Workout } from "@/types";
 
 interface CompletionScreenProps {
@@ -21,6 +22,7 @@ export function CompletionScreen({
 }: CompletionScreenProps) {
   const { startedAt } = useWorkoutSessionStore();
   const [saved, setSaved] = useState<boolean | null>(null); // null=saving, true=saved, false=skipped/anon
+  const haptic = useHaptic();
 
   const durationSeconds = startedAt
     ? Math.round((Date.now() - new Date(startedAt).getTime()) / 1000)
@@ -31,6 +33,20 @@ export function CompletionScreen({
       ? `${Math.round(durationSeconds / 60)} min`
       : `${durationSeconds}s`
     : `${workout.estimatedMinutes ?? "—"} min`;
+
+  // Fire confetti + haptic on mount (reward psychology)
+  useEffect(() => {
+    haptic.success();
+    import("canvas-confetti").then(({ default: confetti }) => {
+      confetti({
+        particleCount: 120,
+        spread: 80,
+        origin: { y: 0.55 },
+        colors: ["#7c3aed", "#a78bfa", "#ddd6fe", "#10b981", "#fbbf24"],
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Auto-save when completion screen mounts
   useEffect(() => {
@@ -43,9 +59,9 @@ export function CompletionScreen({
       tenantId: workout.tenantId,
       startedAt,
       totalDurationSeconds: durationSeconds ?? 0,
-    }).then((result) => {
-      setSaved(result !== null);
-    });
+    })
+      .then((result) => setSaved(result !== null))
+      .catch(() => setSaved(false));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -79,8 +79,11 @@ export default function PricingPage() {
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          Pricing details will be finalized. Contact us to discuss your
-          gym&apos;s needs.
+          All plans include a 7-day free trial. No credit card required to get started.{" "}
+          <a href="/contact" className="underline underline-offset-4 hover:text-foreground">
+            Contact us
+          </a>{" "}
+          if you have questions.
         </p>
       </div>
     </main>

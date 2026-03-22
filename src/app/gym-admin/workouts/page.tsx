@@ -17,7 +17,7 @@ export default async function GymAdminWorkoutsPage() {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return <div className="py-24 text-center text-sm text-muted-foreground">Access denied.</div>;
@@ -28,7 +28,7 @@ export default async function GymAdminWorkoutsPage() {
     .from("tenants")
     .select("slug")
     .eq("id", profile.tenant_id)
-    .single();
+    .maybeSingle();
 
   const gymSlug = tenant?.slug ?? "";
 

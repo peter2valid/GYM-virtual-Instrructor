@@ -68,7 +68,7 @@ export async function createGym(data: OnboardingData): Promise<OnboardingResult>
   }
 
   // 3. Ensure profile has correct role (trigger may have set it to 'member')
-  await admin
+  const { error: profileError } = await admin
     .from("profiles")
     .upsert(
       {
@@ -79,6 +79,12 @@ export async function createGym(data: OnboardingData): Promise<OnboardingResult>
       },
       { onConflict: "id" }
     );
+
+  if (profileError) {
+    await admin.from("tenants").delete().eq("id", tenant.id);
+    await admin.auth.admin.deleteUser(authData.user.id);
+    return { error: "Failed to set up admin profile. Please try again." };
+  }
 
   // 4. Default feature flags based on plan
   const isTrackOrPremium = data.plan !== "starter";
@@ -94,15 +100,22 @@ export async function createGym(data: OnboardingData): Promise<OnboardingResult>
     { feature_key: "custom_recommendations",enabled: isPremium },
   ].map((f) => ({ ...f, tenant_id: tenant.id }));
 
-  await admin.from("feature_flags").insert(flags);
+  const { error: flagsError } = await admin.from("feature_flags").insert(flags);
+  if (flagsError) {
+    // Non-fatal: flags can be re-seeded; don't abort the whole onboarding
+    console.error("[onboarding] feature_flags insert failed:", flagsError.message);
+  }
 
   // 5. Default tenant settings
-  await admin.from("tenant_settings").insert({
+  const { error: settingsError } = await admin.from("tenant_settings").insert({
     tenant_id: tenant.id,
     show_login_required: false,
     show_quick_start: true,
     default_recommendation_mode: "manual",
   });
+  if (settingsError) {
+    console.error("[onboarding] tenant_settings insert failed:", settingsError.message);
+  }
 
   // 6. Send welcome email (best-effort)
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";

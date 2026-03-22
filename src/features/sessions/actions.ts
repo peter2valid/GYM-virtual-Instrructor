@@ -40,8 +40,12 @@ export async function saveWorkoutSession(
       total_duration_seconds: input.totalDurationSeconds,
     })
     .select("id")
-    .single();
+    .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    console.error("[saveWorkoutSession] failed:", error.message);
+    return null;
+  }
+  if (!data) return null;
   return { id: data.id };
 }

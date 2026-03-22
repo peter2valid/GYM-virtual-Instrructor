@@ -15,7 +15,7 @@ export default async function SuperAdminGymsPage() {
     .from("profiles")
     .select("role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (profile?.role !== "super_admin") {
     return (

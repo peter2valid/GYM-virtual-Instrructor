@@ -1,5 +1,6 @@
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
+import { GymBottomNav } from "@/components/gym/GymBottomNav";
 
 interface GymLayoutProps {
   children: React.ReactNode;
@@ -49,6 +50,8 @@ export default async function GymLayout({ children, params }: GymLayoutProps) {
       )}
       {children}
       <PwaInstallBanner />
+      {/* App-style bottom navigation — hides itself on session pages */}
+      <GymBottomNav gymSlug={gymSlug} />
     </div>
   );
 }

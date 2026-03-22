@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import QRCode from "qrcode";
 import { getAuthUser } from "@/features/auth/actions";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
-import { QrDownloadButton } from "./QrDownloadButton";
+import { QrDownloadButton, QrPrintButton } from "./QrDownloadButton";
 
 export const metadata = { title: "Check-In QR Code" };
 
@@ -16,7 +16,7 @@ export default async function GymAdminQrPage() {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return (
@@ -28,7 +28,7 @@ export default async function GymAdminQrPage() {
     .from("tenants")
     .select("slug, name")
     .eq("id", profile.tenant_id)
-    .single();
+    .maybeSingle();
 
   if (!tenant) return null;
 
@@ -70,13 +70,7 @@ export default async function GymAdminQrPage() {
         {/* Actions */}
         <div className="flex gap-3">
           <QrDownloadButton dataUrl={qrDataUrl} gymName={tenant.name} />
-          <button
-            onClick={undefined}
-            className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
-            id="qr-print-btn"
-          >
-            Print
-          </button>
+          <QrPrintButton />
         </div>
       </div>
 

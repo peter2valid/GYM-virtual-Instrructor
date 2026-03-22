@@ -23,3 +23,14 @@ export function QrDownloadButton({
     </button>
   );
 }
+
+export function QrPrintButton() {
+  return (
+    <button
+      onClick={() => window.print()}
+      className="rounded-xl border border-border px-5 py-2.5 text-sm font-medium text-foreground hover:bg-accent"
+    >
+      Print
+    </button>
+  );
+}

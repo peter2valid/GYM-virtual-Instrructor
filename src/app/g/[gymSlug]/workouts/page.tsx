@@ -9,6 +9,8 @@ import {
 import { WorkoutsList } from "@/components/workout/WorkoutsList";
 import type { WorkoutCategory } from "@/types";
 
+export const revalidate = 60;
+
 interface Props {
   params: Promise<{ gymSlug: string }>;
   searchParams: Promise<{ category?: string }>;
@@ -59,7 +61,7 @@ export default async function GymWorkoutsPage({ params, searchParams }: Props) {
       </header>
 
       {/* Content */}
-      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-5">
+      <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-5 pb-24">
         {workouts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <p className="text-muted-foreground">

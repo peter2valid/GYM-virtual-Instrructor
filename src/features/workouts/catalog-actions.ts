@@ -14,7 +14,7 @@ async function getAdminTenant() {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? ""))
     return null;
   return { client, tenantId: profile.tenant_id };
@@ -32,6 +32,16 @@ export async function updateCatalogPreference(
   if (!ctx) return { error: "Unauthorized" };
 
   const { client, tenantId } = ctx;
+
+  // Verify the workout belongs to this tenant before updating preferences
+  const { data: owned } = await client
+    .from("workouts")
+    .select("id")
+    .eq("id", workoutId)
+    .eq("tenant_id", tenantId)
+    .maybeSingle();
+
+  if (!owned) return { error: "Workout not found or access denied." };
 
   const { error } = await client
     .from("tenant_workout_preferences")

@@ -19,14 +19,17 @@ export default async function AttendPage({ params }: Props) {
   const today = new Date().toISOString().split("T")[0];
   const now = new Date().toISOString();
 
-  // Log attendance — silently ignore duplicate check-ins for the same day
-  await client.from("attendance_logs").insert({
-    tenant_id: tenant.id,
-    member_id: user?.id ?? null,
-    attendance_date: today,
-    checked_in_at: now,
-    source: "qr_scan",
-  });
+  // Log attendance — upsert so duplicate scans on the same day are silently ignored
+  await client.from("attendance_logs").upsert(
+    {
+      tenant_id: tenant.id,
+      member_id: user?.id ?? null,
+      attendance_date: today,
+      checked_in_at: now,
+      source: "qr_scan",
+    },
+    { onConflict: "tenant_id,member_id,attendance_date", ignoreDuplicates: true }
+  );
 
   redirect(`/g/${gymSlug}`);
 }

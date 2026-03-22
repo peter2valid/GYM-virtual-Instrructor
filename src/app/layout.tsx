@@ -33,6 +33,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  viewportFit: "cover", // lets safe-area-inset-bottom work on iPhone notch devices
 };
 
 export default function RootLayout({

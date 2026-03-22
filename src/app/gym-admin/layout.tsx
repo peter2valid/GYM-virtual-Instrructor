@@ -1,5 +1,6 @@
-import Link from "next/link";
 import { ROUTES } from "@/lib/constants";
+import { AdminSidebarNav } from "@/components/admin/AdminSidebarNav";
+import { AdminMobileNav } from "@/components/admin/AdminMobileNav";
 
 const navItems = [
   { href: ROUTES.GYM_ADMIN, label: "Dashboard" },
@@ -7,7 +8,7 @@ const navItems = [
   { href: ROUTES.GYM_ADMIN_WORKOUTS, label: "Workouts" },
   { href: ROUTES.GYM_ADMIN_ANALYTICS, label: "Analytics" },
   { href: ROUTES.GYM_ADMIN_ATTENDANCE, label: "Attendance" },
-  { href: ROUTES.GYM_ADMIN_QR, label: "QR Code" },
+  { href: ROUTES.GYM_ADMIN_QR, label: "QR Code", shortLabel: "QR" },
   { href: ROUTES.GYM_ADMIN_SETTINGS, label: "Settings" },
 ];
 
@@ -24,17 +25,7 @@ export default function GymAdminLayout({
             Gym Admin
           </span>
         </div>
-        <nav className="flex-1 space-y-1 p-3">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex h-9 items-center rounded-md px-3 text-sm text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <AdminSidebarNav items={navItems} />
       </aside>
       <div className="flex flex-1 flex-col">
         <header className="flex h-14 items-center border-b border-border px-4 md:hidden">
@@ -42,8 +33,9 @@ export default function GymAdminLayout({
             Gym Admin
           </span>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex-1 p-4 pb-20 md:p-6 md:pb-6">{children}</main>
       </div>
+      <AdminMobileNav items={navItems} />
     </div>
   );
 }

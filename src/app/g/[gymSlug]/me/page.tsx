@@ -57,7 +57,7 @@ export default async function MemberProfilePage({ params }: Props) {
     .slice(0, 2);
 
   return (
-    <main className="mx-auto max-w-2xl px-4 pb-16">
+    <main className="mx-auto max-w-2xl px-4 pb-24">
       {/* Header */}
       <nav className="flex items-center justify-between py-4">
         <Link

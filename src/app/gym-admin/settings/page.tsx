@@ -14,7 +14,7 @@ export default async function GymAdminSettingsPage() {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return (
@@ -28,7 +28,7 @@ export default async function GymAdminSettingsPage() {
       "id, name, slug, logo_url, primary_color, welcome_message, subscription_plan, subscription_status, is_active, created_at"
     )
     .eq("id", profile.tenant_id)
-    .single();
+    .maybeSingle();
 
   if (!tenant) return null;
 

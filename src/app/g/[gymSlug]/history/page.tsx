@@ -40,7 +40,7 @@ export default async function HistoryPage({ params }: Props) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-4 py-6">
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-4 py-6 pb-24">
         {sessions.length === 0 ? (
           <EmptyState gymSlug={gymSlug} loggedIn={!!user} />
         ) : (

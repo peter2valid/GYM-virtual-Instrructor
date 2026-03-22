@@ -13,7 +13,7 @@ export default async function GymAdminAttendancePage() {
     .from("profiles")
     .select("tenant_id, role")
     .eq("id", user.id)
-    .single();
+    .maybeSingle();
 
   if (!profile?.tenant_id || !["gym_admin", "super_admin"].includes(profile.role ?? "")) {
     return <div className="py-24 text-center text-sm text-muted-foreground">Access denied.</div>;
