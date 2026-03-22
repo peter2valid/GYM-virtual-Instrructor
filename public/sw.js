@@ -1,7 +1,7 @@
 // VirtualGYM Service Worker
 // Caches static assets and pages for offline use.
 
-const CACHE_NAME = "virtualgym-v1";
+const CACHE_NAME = "virtualgym-v2";
 
 // Assets to pre-cache on install
 const PRECACHE_URLS = ["/", "/offline", "/manifest.json"];
@@ -44,15 +44,17 @@ self.addEventListener("fetch", (event) => {
 
   event.respondWith(
     caches.match(request).then((cached) => {
-      if (cached) return cached;
+      // NOTE: We only return purely cached static assets, NOT dynamic HTML pages.
+      if (cached && url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff2?)$/)) {
+        return cached;
+      }
 
       return fetch(request)
         .then((response) => {
-          // Cache successful responses for gym pages and static assets
+          // Cache successful responses for STATIC ASSETS ONLY
           if (
             response.ok &&
-            (url.pathname.startsWith("/g/") ||
-              url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff2?)$/))
+            url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff2?)$/)
           ) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));

@@ -5,6 +5,7 @@ import { getTenantBySlug } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import { getSessionHistory } from "@/features/sessions/queries";
 import type { SessionWithWorkout } from "@/features/sessions/queries";
+import { getCategoryIcon } from "@/lib/utils/gym-icons";
 
 interface Props {
   params: Promise<{ gymSlug: string }>;
@@ -39,7 +40,7 @@ export default async function HistoryPage({ params }: Props) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-lg flex-1 space-y-4 px-4 py-6">
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 px-4 py-6">
         {sessions.length === 0 ? (
           <EmptyState gymSlug={gymSlug} loggedIn={!!user} />
         ) : (
@@ -76,6 +77,12 @@ function SessionCard({ session, gymSlug }: { session: SessionWithWorkout; gymSlu
 
   return (
     <div className="flex items-center gap-4 rounded-xl border border-border bg-card px-4 py-3.5">
+      <div className="h-10 w-10 flex-shrink-0 rounded-xl bg-muted p-2 flex items-center justify-center text-muted-foreground">
+        {(() => {
+          const Icon = getCategoryIcon(session.workoutCategory ?? "");
+          return <Icon className="h-full w-full" strokeWidth={2} />;
+        })()}
+      </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
           {session.workoutTitle}
@@ -102,8 +109,13 @@ function SessionCard({ session, gymSlug }: { session: SessionWithWorkout; gymSlu
 function EmptyState({ gymSlug, loggedIn }: { gymSlug: string; loggedIn: boolean }) {
   return (
     <div className="flex flex-col items-center gap-4 rounded-xl border border-border bg-card px-6 py-12 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-2xl">
-        🏋️
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+        <div className="text-muted-foreground opacity-60">
+          {(() => {
+            const Icon = getCategoryIcon("Default");
+            return <Icon className="h-7 w-7" strokeWidth={2.5} />;
+          })()}
+        </div>
       </div>
       <div className="space-y-1">
         <p className="text-sm font-medium text-foreground">No sessions yet</p>

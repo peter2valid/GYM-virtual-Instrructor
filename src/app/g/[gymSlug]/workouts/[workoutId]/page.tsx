@@ -4,6 +4,7 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { getWorkoutBySlugOrId } from "@/features/workouts/queries";
 import { DIFFICULTY_STYLES, formatDuration } from "@/lib/utils/workout-ui";
+import { getCategoryIcon, getDifficultyIcon, STAT_ICONS } from "@/lib/utils/gym-icons";
 import type { WorkoutStep } from "@/types";
 
 interface Props {
@@ -47,12 +48,20 @@ export default async function WorkoutDetailPage({ params }: Props) {
       </header>
 
       {/* Content — padded from sticky CTA */}
-      <div className="mx-auto w-full max-w-lg flex-1 space-y-6 px-4 pb-28 pt-6">
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 pb-28 pt-6">
         {/* Title block */}
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {(() => {
+              const Icon = getCategoryIcon(workout.category);
+              return <Icon className="h-4 w-4" strokeWidth={2.5} />;
+            })()}
             <span>{workout.category}</span>
             <span className="text-muted-foreground/30">·</span>
+            {(() => {
+              const Icon = getDifficultyIcon(workout.difficulty);
+              return <Icon className="h-4 w-4" strokeWidth={2.5} />;
+            })()}
             <span>{diff.label}</span>
           </div>
           <h1 className="text-2xl font-bold leading-tight text-foreground">
@@ -67,9 +76,9 @@ export default async function WorkoutDetailPage({ params }: Props) {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-2">
-          <Stat label="Duration" value={formatDuration(workout.estimatedMinutes)} />
-          <Stat label="Steps" value={String(steps.length)} />
-          <Stat label="Level" value={diff.label} />
+          <Stat label="Duration" value={formatDuration(workout.estimatedMinutes)} icon={STAT_ICONS.duration} />
+          <Stat label="Steps" value={String(steps.length)} icon={STAT_ICONS.steps} />
+          <Stat label="Level" value={diff.label} icon={getDifficultyIcon(workout.difficulty)} />
         </div>
 
         {/* Steps preview */}
@@ -101,7 +110,7 @@ export default async function WorkoutDetailPage({ params }: Props) {
 
       {/* Sticky CTA */}
       <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-4 backdrop-blur">
-        <div className="mx-auto max-w-lg">
+        <div className="mx-auto max-w-2xl">
           <Link
             href={`/g/${gymSlug}/workouts/${workout.id}/session`}
             className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:scale-[0.98]"
@@ -117,9 +126,12 @@ export default async function WorkoutDetailPage({ params }: Props) {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, icon: Icon }: { label: string; value: string; icon?: React.ElementType }) {
   return (
     <div className="rounded-xl border border-border bg-card px-3 py-3 text-center">
+      {Icon && (
+        <Icon className="mx-auto mb-2 h-6 w-6 text-muted-foreground opacity-80" strokeWidth={2.5} />
+      )}
       <p className="text-base font-bold text-foreground">{value}</p>
       <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
     </div>

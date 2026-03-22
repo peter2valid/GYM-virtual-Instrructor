@@ -5,6 +5,7 @@ import { getTenantBySlug } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import { getMemberStats } from "@/features/sessions/queries";
 import { WeeklyActivityChart } from "@/components/charts/WeeklyActivityChart";
+import { STAT_ICONS, getCategoryIcon } from "@/lib/utils/gym-icons";
 
 interface Props {
   params: Promise<{ gymSlug: string }>;
@@ -57,24 +58,28 @@ export default async function ProgressPage({ params }: Props) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-lg flex-1 space-y-6 px-4 py-6">
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 py-6">
         {/* Stats grid */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             value={String(stats.totalSessions)}
             label="Total Workouts"
+            icon={STAT_ICONS.workouts}
           />
           <StatCard
             value={stats.totalMinutes > 0 ? `${stats.totalMinutes}` : "0"}
             label="Total Minutes"
+            icon={STAT_ICONS.minutes}
           />
           <StatCard
             value={stats.currentStreak > 0 ? `${stats.currentStreak}` : "0"}
             label="Day Streak 🔥"
+            icon={STAT_ICONS.streak}
           />
           <StatCard
             value={stats.favoriteCategory ?? "—"}
             label="Favourite Category"
+            icon={stats.favoriteCategory ? getCategoryIcon(stats.favoriteCategory) : STAT_ICONS.trophy}
             small
           />
         </div>
@@ -110,14 +115,19 @@ export default async function ProgressPage({ params }: Props) {
 function StatCard({
   value,
   label,
+  icon: Icon,
   small = false,
 }: {
   value: string;
   label: string;
+  icon?: React.ElementType;
   small?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-border bg-card px-4 py-4 text-center">
+      {Icon && (
+        <Icon className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
+      )}
       <p className={`font-bold text-foreground ${small ? "text-lg" : "text-2xl"}`}>
         {value}
       </p>

@@ -103,14 +103,18 @@ export async function getWorkoutsByTenant(
     )
     .eq("tenant_workout_preferences.tenant_id", tenantId)
     .eq("is_published", true)
-    .order("tenant_workout_preferences.display_order");
+    .order("display_order", { referencedTable: "tenant_workout_preferences" });
 
   if (filters?.category) {
     query = query.eq("category", filters.category);
   }
 
   const { data, error } = await query;
-  if (error || !data) return [];
+  if (error) {
+    console.error("[getWorkoutsByTenant] Supabase Error:", error);
+    return [];
+  }
+  if (!data) return [];
 
   // Steps are not fetched here — list views don't need them
   return data.map((row) => mapWorkoutRow(row, []));
@@ -197,7 +201,7 @@ export async function getQuickStartWorkoutsForTenant(
     .eq("tenant_workout_preferences.tenant_id", tenantId)
     .eq("tenant_workout_preferences.is_quick_start", true)
     .eq("is_published", true)
-    .order("tenant_workout_preferences.display_order")
+    .order("display_order", { referencedTable: "tenant_workout_preferences" })
     .limit(3);
 
   if (error || !data) return [];
@@ -224,7 +228,7 @@ export async function getFeaturedWorkoutsForTenant(
     .eq("tenant_workout_preferences.tenant_id", tenantId)
     .eq("tenant_workout_preferences.is_recommended", true)
     .eq("is_published", true)
-    .order("tenant_workout_preferences.display_order")
+    .order("display_order", { referencedTable: "tenant_workout_preferences" })
     .limit(count);
 
   if (error || !data) return [];
