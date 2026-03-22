@@ -4,11 +4,13 @@ import { createClient } from "@supabase/supabase-js";
 import { getAuthUser } from "@/features/auth/actions";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 
-const adminClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
+function getAdminClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+}
 
 async function requireSuperAdmin() {
   const user = await getAuthUser();
@@ -26,7 +28,7 @@ export async function updateTenantPlan(
   const user = await requireSuperAdmin();
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await adminClient
+  const { error } = await getAdminClient()
     .from("tenants")
     .update({
       subscription_plan: plan,
@@ -51,7 +53,7 @@ export async function updateTenantPlan(
   ];
 
   for (const flag of flagUpdates) {
-    await adminClient
+    await getAdminClient()
       .from("feature_flags")
       .upsert(
         { tenant_id: tenantId, feature_key: flag.feature_key, enabled: flag.enabled },
@@ -69,7 +71,7 @@ export async function toggleTenantActive(
   const user = await requireSuperAdmin();
   if (!user) return { error: "Unauthorized" };
 
-  const { error } = await adminClient
+  const { error } = await getAdminClient()
     .from("tenants")
     .update({ is_active: isActive })
     .eq("id", tenantId);

@@ -3,15 +3,13 @@ import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail, buildPaymentReceiptEmail } from "@/lib/email";
 
-const SECRET = process.env.PAYSTACK_SECRET_KEY!;
-
-const adminClient = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  { auth: { persistSession: false } }
-);
-
 export async function POST(req: NextRequest) {
+  const SECRET = process.env.PAYSTACK_SECRET_KEY!;
+  const adminClient = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
   // Verify Paystack signature
   const body = await req.text();
   const signature = req.headers.get("x-paystack-signature") ?? "";
