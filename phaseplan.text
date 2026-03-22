@@ -1,0 +1,405 @@
+🧠 GYM VIRTUAL INSTRUCTOR PLATFORM
+Architecture + Workflow (V1 MASTER DOCUMENT)
+1. 🎯 PRODUCT DEFINITION
+What you are building
+
+A multi-tenant SaaS platform for gyms that provides:
+
+QR-based access to workouts
+Virtual guided workout sessions
+Member tracking (attendance + activity)
+Gym analytics dashboard
+Optional branding (premium gyms)
+Core idea (simple)
+Scan QR → Enter gym → Train → Track → Analyze
+Business model
+B2B SaaS (you sell to gyms)
+Monthly subscription (KES)
+3 tiers:
+Starter (no tracking)
+Track (login + analytics)
+Premium (branding + advanced features)
+2. 🧱 SYSTEM ARCHITECTURE
+Stack (locked)
+Next.js (App Router)
+TypeScript
+Tailwind + shadcn/ui
+Zustand (local state)
+TanStack Query (server state)
+Supabase (Auth + DB)
+Cloudflare R2 (media)
+Paystack (payments)
+Vercel (hosting)
+High-level architecture
+User (Mobile Web)
+        ↓
+Next.js App (Frontend + API)
+        ↓
+Supabase (Auth + Database)
+        ↓
+Cloudflare R2 (Workout Media)
+        ↓
+Paystack (Gym Billing)
+3. 🏢 MULTI-TENANT MODEL (CORE SYSTEM)
+Definition
+
+Each gym = tenant
+
+Structure
+Platform
+ ├── Gym A (tenant_id = A)
+ ├── Gym B (tenant_id = B)
+ └── Gym C (tenant_id = C)
+Golden Rule
+
+EVERY private record MUST have tenant_id
+
+Why
+prevents data mixing
+enables scaling
+supports SaaS billing
+supports analytics
+4. 🧑‍🤝‍🧑 USER MODEL
+Roles
+member
+gym_admin
+super_admin (you)
+V1 rule
+
+One user belongs to ONE gym only
+
+Profile structure
+profiles
+- id (auth user id)
+- tenant_id
+- full_name
+- age
+- role
+- created_at
+5. 🔐 AUTHENTICATION FLOW
+Entry point
+
+User ALWAYS enters via:
+
+/g/[gymSlug]
+Full flow
+Scan QR
+  ↓
+Open /g/[gymSlug]
+  ↓
+Show gym page
+  ↓
+User selects:
+  - Google login
+  - Email login
+  ↓
+If first time:
+  → fill profile (name, age)
+  ↓
+Create profile with tenant_id
+  ↓
+Redirect to dashboard
+Important rule
+
+QR defines the gym context BEFORE login
+
+6. 📲 QR CODE SYSTEM
+Purpose
+entry point to gym
+identifies tenant
+can identify location/workout
+Types
+1. Gym QR
+/g/iron-house
+2. Workout QR (optional)
+/g/iron-house/workouts/chest-01
+3. Smart QR (advanced)
+/qr/abc123
+V1 recommendation
+
+Start with:
+
+gym-level QR
+optional category QR
+7. 🧾 DATABASE DESIGN (V1)
+Required tables
+tenants
+id
+name
+slug
+logo_url
+primary_color
+subscription_plan
+created_at
+profiles
+id
+tenant_id
+full_name
+age
+role
+created_at
+workouts
+id
+tenant_id (or global)
+title
+description
+category
+difficulty
+workout_steps
+id
+tenant_id
+workout_id
+title
+instruction_text
+media_url
+duration_seconds
+reps
+sets
+rest_seconds
+step_order
+workout_sessions
+id
+tenant_id
+member_id
+workout_id
+started_at
+completed_at
+status
+completion_percent
+attendance_logs
+id
+tenant_id
+member_id
+attendance_date
+source
+8. 🔐 SECURITY MODEL (CRITICAL)
+
+Use Supabase RLS.
+
+Rules
+Member
+can only see:
+their own data
+their own gym
+Gym Admin
+can see:
+all users in their gym
+all gym analytics
+Super Admin
+can see everything
+Core policy logic
+row.tenant_id == user.tenant_id
+9. 📱 MEMBER APP FLOW
+Main flow
+Scan QR
+ → Login
+ → Dashboard
+ → Select workout
+ → Start session
+ → Complete session
+ → Save data
+Screens
+1. Gym landing
+gym name
+start workout
+login button
+2. Dashboard
+streak (if enabled)
+start workout
+history
+3. Workout list
+categories
+cards
+4. Workout session (core)
+video/GIF
+timer
+reps/sets
+next button
+5. Completion
+success screen
+stats
+10. 🏋️ WORKOUT ENGINE
+Each workout is:
+Workout
+ → Step 1
+ → Step 2
+ → Step 3
+Each step includes:
+instruction
+media
+duration OR reps
+rest
+Session logic
+Start session
+ → load steps
+ → run timer
+ → next step
+ → repeat
+ → complete
+State management
+
+Use Zustand:
+
+current step
+timer
+progress
+11. 📊 ADMIN DASHBOARD
+Gym Admin sees:
+total members
+active users
+attendance
+workouts started
+workouts completed
+Layout
+Dashboard
+Members
+Workouts
+Analytics
+Settings
+12. 💰 PACKAGES SYSTEM
+Starter
+no login
+no tracking
+workouts only
+Track
+login
+attendance
+workout history
+dashboard
+Premium
+branding
+advanced analytics
+streaks
+segmentation
+Feature flags example
+attendance_tracking = true
+streaks = true
+branding = false
+13. 🎨 BRANDING SYSTEM
+
+Stored in tenants:
+
+logo_url
+primary_color
+secondary_color
+UI behavior
+
+Starter:
+
+default theme
+
+Premium:
+
+gym theme
+14. 📦 MEDIA SYSTEM
+Storage
+
+Cloudflare R2
+
+Format
+
+Use:
+
+MP4 / WebM (preferred)
+thumbnails
+
+Avoid heavy GIF usage
+
+Structure
+/workouts/chest/dumbbell-press.mp4
+/workouts/back/pull-up.mp4
+15. ⚡ PERFORMANCE STRATEGY
+Key rules
+use CDN (R2)
+cache media
+use TanStack Query
+avoid heavy re-renders
+lazy load media
+mobile-first UI
+Critical
+
+Build for slow gym WiFi
+
+16. 🧠 DATA TRACKING LOGIC
+Attendance
+
+Triggered when:
+
+user scans QR OR
+starts workout
+Streak
+based on daily attendance
+Analytics
+sessions started
+sessions completed
+active users
+retention
+17. 🚀 ONBOARDING FLOW (GYM)
+Step 1
+
+You onboard gym
+
+Step 2
+
+Create tenant
+
+Step 3
+
+Assign plan
+
+Step 4
+
+Generate QR
+
+Step 5
+
+Gym starts using
+
+Member onboarding
+self-signup via QR
+auto-attach to gym
+18. ❌ WHAT NOT TO DO
+
+Do NOT:
+
+skip tenant_id
+mix gym data
+overbuild V1
+start with AI features
+use multiple repos early
+rely on frontend security
+use GIF-only media
+19. 🧠 CORE PRINCIPLES
+Simple beats complex
+Fast onboarding wins
+Data = value
+Gym owner experience > member experience
+Mobile-first always
+One system, many gyms
+20. 🎯 V1 SUCCESS CRITERIA
+
+You win when:
+
+a gym can be onboarded in < 30 minutes
+a member can scan and start in < 10 seconds
+workouts run smoothly on phone
+admin can see activity instantly
+FINAL TRUTH
+
+You are not building:
+
+❌ a fitness app
+
+You are building:
+
+✅ a digital operating system for gyms
+
+NEXT STEP
+
+Now that this is locked, your next move is:
+
+👉 Build:
+
+Supabase schema
+/g/[gymSlug] route
+one workout session screen
