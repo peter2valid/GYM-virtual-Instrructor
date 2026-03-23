@@ -4,8 +4,27 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import * as Tabs from "@radix-ui/react-tabs";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { createBrowserSupabaseClient } from "@/lib/supabase";
 import { ROUTES } from "@/lib/constants";
+
+const emailSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+const phoneSchema = z.object({
+  fullName: z.string().min(2, "Name must be at least 2 characters"),
+  phone: z.string().min(10, "Phone number is too short"),
+});
+
+const otpSchema = z.object({
+  otp: z.string().length(6, "Code must be exactly 6 digits"),
+  phone: z.string(),
+});
 
 export default function SignupPage() {
   return (
@@ -27,31 +46,39 @@ function SignupPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
 
-  // Email form state
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  // Phone form state
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  // Phone state
   const [otpSent, setOtpSent] = useState(false);
+  const [currentPhone, setCurrentPhone] = useState("");
+
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { fullName: "", email: "", password: "" },
+  });
+
+  const phoneForm = useForm<z.infer<typeof phoneSchema>>({
+    resolver: zodResolver(phoneSchema),
+    defaultValues: { fullName: "", phone: "" },
+  });
+
+  const otpForm = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: "", phone: "" },
+  });
 
   const supabase = createBrowserSupabaseClient();
 
   // ─── Email sign-up ────────────────────────────────────────────────
-  async function handleEmailSignUp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleEmailSignUp(data: z.infer<typeof emailSchema>) {
     setLoading(true);
     setError(null);
 
     const { error } = await supabase.auth.signUp({
-      email,
-      password,
+      email: data.email,
+      password: data.password,
       options: {
         emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         data: {
-          full_name: fullName,
+          full_name: data.fullName,
           ...(gymSlug ? { gym_slug: gymSlug } : {}),
         },
       },
@@ -70,16 +97,15 @@ function SignupPageInner() {
   }
 
   // ─── Phone: send OTP ──────────────────────────────────────────────
-  async function handleSendOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSendOtp(data: z.infer<typeof phoneSchema>) {
     setLoading(true);
     setError(null);
 
     const { error } = await supabase.auth.signInWithOtp({
-      phone,
+      phone: data.phone,
       options: {
         data: {
-          full_name: fullName,
+          full_name: data.fullName,
           ...(gymSlug ? { gym_slug: gymSlug } : {}),
         },
       },
@@ -93,17 +119,18 @@ function SignupPageInner() {
     }
 
     setOtpSent(true);
+    setCurrentPhone(data.phone);
+    otpForm.setValue("phone", data.phone);
   }
 
   // ─── Phone: verify OTP ────────────────────────────────────────────
-  async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleVerifyOtp(data: z.infer<typeof otpSchema>) {
     setLoading(true);
     setError(null);
 
     const { error } = await supabase.auth.verifyOtp({
-      phone,
-      token: otp,
+      phone: data.phone,
+      token: data.otp,
       type: "sms",
     });
 
@@ -237,39 +264,32 @@ function SignupPageInner() {
 
         {/* Email tab */}
         <Tabs.Content value="email" className="mt-4">
-          <form onSubmit={handleEmailSignUp} className="space-y-3">
-            <Field label="Full name">
+          <form onSubmit={emailForm.handleSubmit(handleEmailSignUp)} className="space-y-3">
+            <Field label="Full name" error={emailForm.formState.errors.fullName?.message}>
               <input
                 type="text"
                 autoComplete="name"
-                required
                 placeholder="Your name"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="input"
+                {...emailForm.register("fullName")}
+                className={`input ${emailForm.formState.errors.fullName ? "border-destructive focus:ring-destructive" : ""}`}
               />
             </Field>
-            <Field label="Email">
+            <Field label="Email" error={emailForm.formState.errors.email?.message}>
               <input
                 type="email"
                 autoComplete="email"
-                required
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input"
+                {...emailForm.register("email")}
+                className={`input ${emailForm.formState.errors.email ? "border-destructive focus:ring-destructive" : ""}`}
               />
             </Field>
-            <Field label="Password">
+            <Field label="Password" error={emailForm.formState.errors.password?.message}>
               <input
                 type="password"
                 autoComplete="new-password"
-                required
-                minLength={8}
                 placeholder="Min 8 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
+                {...emailForm.register("password")}
+                className={`input ${emailForm.formState.errors.password ? "border-destructive focus:ring-destructive" : ""}`}
               />
             </Field>
             <SubmitButton loading={loading}>Create account</SubmitButton>
@@ -279,44 +299,38 @@ function SignupPageInner() {
         {/* Phone tab */}
         <Tabs.Content value="phone" className="mt-4">
           {!otpSent ? (
-            <form onSubmit={handleSendOtp} className="space-y-3">
-              <Field label="Full name">
+            <form onSubmit={phoneForm.handleSubmit(handleSendOtp)} className="space-y-3">
+              <Field label="Full name" error={phoneForm.formState.errors.fullName?.message}>
                 <input
                   type="text"
                   autoComplete="name"
-                  required
                   placeholder="Your name"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="input"
+                  {...phoneForm.register("fullName")}
+                  className={`input ${phoneForm.formState.errors.fullName ? "border-destructive focus:ring-destructive" : ""}`}
                 />
               </Field>
-              <Field label="Phone number">
+              <Field label="Phone number" error={phoneForm.formState.errors.phone?.message}>
                 <input
                   type="tel"
                   autoComplete="tel"
-                  required
                   placeholder="+1 234 567 8900"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="input"
+                  {...phoneForm.register("phone")}
+                  className={`input ${phoneForm.formState.errors.phone ? "border-destructive focus:ring-destructive" : ""}`}
                 />
               </Field>
               <SubmitButton loading={loading}>Send code</SubmitButton>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-3">
-              <Field label={`Code sent to ${phone}`}>
+            <form onSubmit={otpForm.handleSubmit(handleVerifyOtp)} className="space-y-3">
+              <Field label={`Code sent to ${currentPhone}`} error={otpForm.formState.errors.otp?.message}>
                 <input
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  required
                   placeholder="123456"
                   maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="input tracking-widest"
+                  {...otpForm.register("otp")}
+                  className={`input tracking-widest ${otpForm.formState.errors.otp ? "border-destructive focus:ring-destructive" : ""}`}
                 />
               </Field>
               <SubmitButton loading={loading}>Verify &amp; create account</SubmitButton>
@@ -324,7 +338,7 @@ function SignupPageInner() {
                 type="button"
                 onClick={() => {
                   setOtpSent(false);
-                  setOtp("");
+                  otpForm.reset();
                 }}
                 className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
               >
@@ -353,15 +367,18 @@ function SignupPageInner() {
 
 function Field({
   label,
+  error,
   children,
 }: {
   label: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <label className="block text-sm font-medium text-foreground">{label}</label>
       {children}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   );
 }

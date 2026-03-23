@@ -82,7 +82,6 @@ function OnboardPageInner() {
   const [gymName, setGymName] = useState("");
   const [gymSlug, setGymSlug] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
-  const [slugEdited, setSlugEdited] = useState(false);
 
   // Step 2: admin account
   const [adminName, setAdminName] = useState("");
@@ -94,7 +93,7 @@ function OnboardPageInner() {
 
   function handleGymNameChange(val: string) {
     setGymName(val);
-    if (!slugEdited) setGymSlug(slugify(val));
+    setGymSlug(slugify(val));
   }
 
   async function handleSubmit() {
@@ -228,17 +227,13 @@ function OnboardPageInner() {
                 label="Gym URL"
                 hint={`Members will access your gym at /g/${gymSlug || "your-gym"}`}
               >
-                <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-input bg-muted/40">
+                <div className="flex items-center gap-0 overflow-hidden rounded-xl border border-input bg-muted/40 opacity-75">
                   <span className="border-r border-border px-3 text-sm text-muted-foreground">/g/</span>
                   <input
                     type="text"
-                    required
+                    readOnly
                     placeholder="your-gym"
                     value={gymSlug}
-                    onChange={(e) => {
-                      setSlugEdited(true);
-                      setGymSlug(slugify(e.target.value));
-                    }}
                     className="flex-1 bg-transparent px-3 py-3 text-sm text-foreground outline-none placeholder:text-muted-foreground"
                   />
                 </div>

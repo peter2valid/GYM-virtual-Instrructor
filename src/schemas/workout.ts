@@ -8,10 +8,14 @@ export const workoutDifficultySchema = z.enum([
 
 export const workoutCategorySchema = z.enum([
   "Warmup",
-  "Chest",
-  "Back",
+  "Abs",
   "Legs",
+  "Back",
   "Cardio",
+  "Chest",
+  "Shoulders",
+  "Arms",
+  "Rest",
   "Full Body",
   "Upper Body",
 ]);

@@ -3,6 +3,10 @@ import { getAuthUser } from "@/features/auth/actions";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { getTenantStats, getTenantRecentSessions } from "@/features/sessions/queries";
 import { getCategoryIcon, STAT_ICONS } from "@/lib/utils/gym-icons";
+import { StatsCard } from "@/components/ui/StatsCard";
+import { ArrowRight } from "lucide-react";
+import Link from "next/link";
+import { ROUTES } from "@/lib/constants";
 
 export const metadata = { title: "Gym Dashboard" };
 
@@ -50,32 +54,34 @@ export default async function GymAdminDashboard() {
       </div>
 
       {/* Stats */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {statCards.map((card) => (
-          <div key={card.label} className="rounded-xl border border-border bg-card p-4">
-            <div className="flex items-center gap-2 mb-2 text-muted-foreground">
-              {(() => {
-                const Icon = card.icon;
-                return <Icon className="h-5 w-5" />;
-              })()}
-              <p className="text-xs text-muted-foreground">{card.label}</p>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{card.value}</p>
-          </div>
+          <StatsCard
+            key={card.label}
+            label={card.label}
+            value={card.value}
+            icon={card.icon}
+          />
         ))}
       </div>
 
       {/* Recent sessions */}
-      <div className="rounded-xl border border-border bg-card">
-        <div className="border-b border-border px-4 py-3">
-          <p className="text-sm font-semibold text-foreground">Recent Sessions</p>
+      <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <p className="text-base font-semibold text-foreground tracking-tight">Recent Sessions</p>
+          <Link
+            href={ROUTES.GYM_ADMIN_ANALYTICS}
+            className="text-xs font-semibold text-primary hover:underline flex items-center gap-1"
+          >
+            View More <ArrowRight className="h-3 w-3" />
+          </Link>
         </div>
         {recentSessions.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">
             No sessions recorded yet.
           </p>
         ) : (
-          <div className="divide-y divide-border">
+          <div className="divide-y divide-border/50">
             {recentSessions.map((s) => {
               const date = s.completedAt
                 ? new Date(s.completedAt).toLocaleDateString("en", {
@@ -89,17 +95,17 @@ export default async function GymAdminDashboard() {
                 ? `${Math.round(s.totalDurationSeconds / 60)} min`
                 : null;
               return (
-                <div key={s.id} className="flex items-center justify-between px-4 py-3">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 flex-shrink-0 rounded-lg bg-muted p-1.5 flex flex-col items-center justify-center text-muted-foreground">
+                <div key={s.id} className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-black/5 dark:hover:bg-white/5">
+                  <div className="flex items-center gap-4">
+                    <div className="h-10 w-10 flex-shrink-0 rounded-xl bg-primary/10 flex flex-col items-center justify-center text-primary group transition-all">
                       {(() => {
                         const Icon = getCategoryIcon(s.workoutCategory ?? "");
-                        return <Icon className="h-full w-full" />;
+                        return <Icon className="h-5 w-5" />;
                       })()}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-foreground">{s.workoutTitle}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-sm font-semibold text-foreground leading-tight">{s.workoutTitle}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
                         {s.workoutCategory} · {date}
                       </p>
                     </div>

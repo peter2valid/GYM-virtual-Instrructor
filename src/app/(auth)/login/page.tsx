@@ -4,8 +4,25 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import * as Tabs from "@radix-ui/react-tabs";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { createBrowserSupabaseClient } from "@/lib/supabase";
 import { ROUTES } from "@/lib/constants";
+
+const emailSchema = z.object({
+  email: z.string().min(1, "Email is required").email("Invalid email address"),
+  password: z.string().min(8, "Password must be at least 8 characters"),
+});
+
+const phoneSchema = z.object({
+  phone: z.string().min(10, "Phone number is too short"),
+});
+
+const otpSchema = z.object({
+  otp: z.string().length(6, "Code must be exactly 6 digits"),
+  phone: z.string(),
+});
 
 export default function LoginPage() {
   return (
@@ -24,28 +41,40 @@ function LoginPageInner() {
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
 
-  // Email form state
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-
-  // Phone form state
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
+  // Phone state transitions
   const [otpSent, setOtpSent] = useState(false);
+  const [currentPhone, setCurrentPhone] = useState("");
+
+  const emailForm = useForm<z.infer<typeof emailSchema>>({
+    resolver: zodResolver(emailSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const phoneForm = useForm<z.infer<typeof phoneSchema>>({
+    resolver: zodResolver(phoneSchema),
+    defaultValues: { phone: "" },
+  });
+
+  const otpForm = useForm<z.infer<typeof otpSchema>>({
+    resolver: zodResolver(otpSchema),
+    defaultValues: { otp: "", phone: "" },
+  });
 
   const supabase = createBrowserSupabaseClient();
 
   // ─── Email / Password ─────────────────────────────────────────────
-  async function handleEmailSignIn(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleEmailSignIn(data: z.infer<typeof emailSchema>) {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: signInError } = await supabase.auth.signInWithPassword({ 
+      email: data.email, 
+      password: data.password 
+    });
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
+    if (signInError) {
+      setError(signInError.message);
       return;
     }
     // Hard navigation ensures the session cookie is committed before the
@@ -54,37 +83,37 @@ function LoginPageInner() {
   }
 
   // ─── Phone: send OTP ──────────────────────────────────────────────
-  async function handleSendOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSendOtp(data: z.infer<typeof phoneSchema>) {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithOtp({ phone });
+    const { error: otpError } = await supabase.auth.signInWithOtp({ phone: data.phone });
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
+    if (otpError) {
+      setError(otpError.message);
       return;
     }
     setOtpSent(true);
+    setCurrentPhone(data.phone);
+    otpForm.setValue("phone", data.phone);
     setInfo("Code sent — check your messages.");
   }
 
   // ─── Phone: verify OTP ────────────────────────────────────────────
-  async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleVerifyOtp(data: z.infer<typeof otpSchema>) {
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.verifyOtp({
-      phone,
-      token: otp,
+    const { error: verifyError } = await supabase.auth.verifyOtp({
+      phone: data.phone,
+      token: data.otp,
       type: "sms",
     });
     setLoading(false);
 
-    if (error) {
-      setError(error.message);
+    if (verifyError) {
+      setError(verifyError.message);
       return;
     }
     window.location.href = next;
@@ -181,27 +210,23 @@ function LoginPageInner() {
 
         {/* Email tab */}
         <Tabs.Content value="email" className="mt-4">
-          <form onSubmit={handleEmailSignIn} className="space-y-3">
-            <Field label="Email">
+          <form onSubmit={emailForm.handleSubmit(handleEmailSignIn)} className="space-y-3">
+            <Field label="Email" error={emailForm.formState.errors.email?.message}>
               <input
                 type="email"
                 autoComplete="email"
-                required
                 placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="input"
+                {...emailForm.register("email")}
+                className={`input ${emailForm.formState.errors.email ? "border-destructive focus:ring-destructive" : ""}`}
               />
             </Field>
-            <Field label="Password">
+            <Field label="Password" error={emailForm.formState.errors.password?.message}>
               <input
                 type="password"
                 autoComplete="current-password"
-                required
                 placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="input"
+                {...emailForm.register("password")}
+                className={`input ${emailForm.formState.errors.password ? "border-destructive focus:ring-destructive" : ""}`}
               />
             </Field>
             <SubmitButton loading={loading}>Sign in</SubmitButton>
@@ -211,33 +236,29 @@ function LoginPageInner() {
         {/* Phone tab */}
         <Tabs.Content value="phone" className="mt-4">
           {!otpSent ? (
-            <form onSubmit={handleSendOtp} className="space-y-3">
-              <Field label="Phone number">
+            <form onSubmit={phoneForm.handleSubmit(handleSendOtp)} className="space-y-3">
+              <Field label="Phone number" error={phoneForm.formState.errors.phone?.message}>
                 <input
                   type="tel"
                   autoComplete="tel"
-                  required
                   placeholder="+1 234 567 8900"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="input"
+                  {...phoneForm.register("phone")}
+                  className={`input ${phoneForm.formState.errors.phone ? "border-destructive focus:ring-destructive" : ""}`}
                 />
               </Field>
               <SubmitButton loading={loading}>Send code</SubmitButton>
             </form>
           ) : (
-            <form onSubmit={handleVerifyOtp} className="space-y-3">
-              <Field label={`Code sent to ${phone}`}>
+            <form onSubmit={otpForm.handleSubmit(handleVerifyOtp)} className="space-y-3">
+              <Field label={`Code sent to ${currentPhone}`} error={otpForm.formState.errors.otp?.message}>
                 <input
                   type="text"
                   inputMode="numeric"
                   autoComplete="one-time-code"
-                  required
                   placeholder="123456"
                   maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  className="input tracking-widest"
+                  {...otpForm.register("otp")}
+                  className={`input tracking-widest ${otpForm.formState.errors.otp ? "border-destructive focus:ring-destructive" : ""}`}
                 />
               </Field>
               <SubmitButton loading={loading}>Verify code</SubmitButton>
@@ -245,7 +266,7 @@ function LoginPageInner() {
                 type="button"
                 onClick={() => {
                   setOtpSent(false);
-                  setOtp("");
+                  otpForm.reset();
                   setInfo(null);
                 }}
                 className="w-full text-center text-sm text-muted-foreground underline-offset-4 hover:underline"
@@ -258,15 +279,23 @@ function LoginPageInner() {
       </Tabs.Root>
 
       {/* Footer */}
-      <p className="text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
+      <div className="flex flex-col items-center gap-1.5">
+        <p className="text-center text-sm text-muted-foreground">
+          Don&apos;t have an account?{" "}
+          <Link
+            href={ROUTES.SIGNUP}
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Sign up
+          </Link>
+        </p>
         <Link
-          href={ROUTES.SIGNUP}
-          className="font-medium text-foreground underline-offset-4 hover:underline"
+          href="/forgot-password"
+          className="text-sm text-muted-foreground underline-offset-4 hover:underline"
         >
-          Sign up
+          Forgot password?
         </Link>
-      </p>
+      </div>
     </div>
   );
 }
@@ -275,15 +304,18 @@ function LoginPageInner() {
 
 function Field({
   label,
+  error,
   children,
 }: {
   label: string;
+  error?: string;
   children: React.ReactNode;
 }) {
   return (
     <div className="space-y-1.5">
       <label className="block text-sm font-medium text-foreground">{label}</label>
       {children}
+      {error && <p className="text-xs text-destructive mt-1">{error}</p>}
     </div>
   );
 }

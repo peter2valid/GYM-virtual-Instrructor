@@ -7,7 +7,7 @@ export default function HomePage() {
       <div className="w-full max-w-2xl space-y-8 text-center">
         <div className="space-y-3">
           <h1 className="text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
-            Gym Instructor Platform
+            VirtualGYM
           </h1>
           <p className="text-lg text-muted-foreground">
             The modern gym management platform for trainers and members.

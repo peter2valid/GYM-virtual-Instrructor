@@ -1,8 +1,18 @@
 export type WorkoutDifficulty = "beginner" | "intermediate" | "advanced";
 
 export type WorkoutCategory =
-  | "Strength"
+  | "Warmup"
+  | "Abs"
+  | "Legs"
+  | "Back"
   | "Cardio"
+  | "Chest"
+  | "Shoulders"
+  | "Arms"
+  | "Rest"
+  | "Full Body"
+  | "Upper Body"
+  | "Strength"
   | "HIIT"
   | "Flexibility"
   | "Yoga"
@@ -11,8 +21,6 @@ export type WorkoutCategory =
   | "Bodyweight"
   | "Stretching"
   | "Recovery"
-  | "Warmup"
-  | "Full Body"
   | string; // allow future categories from DB without breaking
 
 export interface WorkoutStep {

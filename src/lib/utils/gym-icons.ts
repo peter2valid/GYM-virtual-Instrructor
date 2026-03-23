@@ -13,13 +13,24 @@ import {
   CheckCircle,
   Users,
   Calendar,
-  FlameKindling
+  FlameKindling,
+  Bike,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export const CATEGORY_ICONS: Record<string, LucideIcon> = {
+  // ─── 7-day plan categories ─────────────────────────────────────
+  Warmup:      Flame,
+  Abs:         Zap,
+  Legs:        PersonStanding,
+  Back:        Activity,
+  Cardio:      Bike,
+  Chest:       Dumbbell,
+  Shoulders:   Target,
+  Arms:        Dumbbell,
+  Rest:        Clock,
+  // ─── legacy / extended categories ──────────────────────────────
   Strength:    Dumbbell,
-  Cardio:      Activity,
   HIIT:        Zap,
   Flexibility: PersonStanding,
   Yoga:        Heart,
@@ -28,8 +39,8 @@ export const CATEGORY_ICONS: Record<string, LucideIcon> = {
   Bodyweight:  PersonStanding,
   Stretching:  PersonStanding,
   Recovery:    Heart,
-  Warmup:      Activity,
   "Full Body": Dumbbell,
+  "Upper Body":Dumbbell,
   Default:     Dumbbell,
 };
 

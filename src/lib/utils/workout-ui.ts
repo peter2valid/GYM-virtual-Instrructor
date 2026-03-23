@@ -4,12 +4,16 @@ import type { WorkoutCategory, WorkoutDifficulty } from "@/types";
  * Single icon per category — used sparingly as a functional indicator,
  * never as a large decorative element with a colored background.
  */
-export const CATEGORY_ICON_MAP: Record<WorkoutCategory, string> = {
+export const CATEGORY_ICON_MAP: Record<string, string> = {
   Warmup: "Flame",
-  Chest: "Dumbbell",
+  Abs: "Zap",
+  Legs: "PersonStanding",
   Back: "Activity",
-  Legs: "Zap",
   Cardio: "Heart",
+  Chest: "Dumbbell",
+  Shoulders: "Target",
+  Arms: "Dumbbell",
+  Rest: "Clock",
   "Full Body": "Target",
   "Upper Body": "Dumbbell",
 };

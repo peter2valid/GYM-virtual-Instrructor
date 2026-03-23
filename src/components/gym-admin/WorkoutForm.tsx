@@ -8,6 +8,7 @@ import { ExerciseSearch } from "./ExerciseSearch";
 const CATEGORIES = [
   "Strength", "Cardio", "HIIT", "Flexibility", "Yoga",
   "Pilates", "CrossFit", "Bodyweight", "Stretching", "Recovery",
+  "Warmup", "Full Body",
 ];
 
 const DIFFICULTIES = [

@@ -73,7 +73,7 @@ export default async function EditWorkoutPage({ params }: Props) {
       <WorkoutForm
         initialData={initialData}
         workoutId={workoutId}
-        onSubmit={(data) => updateWorkout(workoutId, data)}
+        onSubmit={updateWorkout.bind(null, workoutId)}
         submitLabel="Save Changes"
       />
     </div>

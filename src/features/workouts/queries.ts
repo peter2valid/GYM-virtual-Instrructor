@@ -78,6 +78,7 @@ async function getWorkoutSteps(workoutId: string): Promise<WorkoutStep[]> {
 }
 
 // ─── getWorkoutsByTenant ──────────────────────────────────────────────────────
+// Returns tenant-specific workouts (via preferences) + ALL global workouts.
 
 export async function getWorkoutsByTenant(
   tenantId: string,
@@ -85,7 +86,8 @@ export async function getWorkoutsByTenant(
 ): Promise<Workout[]> {
   if (!isSupabaseConfigured) {
     let results = mockWorkouts.filter(
-      (w) => w.tenantId === tenantId && w.isPublished
+      (w) =>
+        (w.tenantId === tenantId || w.tenantId === null) && w.isPublished
     );
     if (filters?.category) {
       results = results.filter((w) => w.category === filters.category);
@@ -95,29 +97,59 @@ export async function getWorkoutsByTenant(
 
   const client = await createServerSupabaseClient();
 
-  // Fetch workouts via tenant_workout_preferences to respect DB-driven ordering
-  let query = client
+  // Tenant-specific workouts ordered by preference
+  let tenantQuery = client
     .from("workouts")
-    .select(
-      `*, tenant_workout_preferences!inner(display_order)`
-    )
+    .select(`*, tenant_workout_preferences!inner(display_order)`)
     .eq("tenant_workout_preferences.tenant_id", tenantId)
     .eq("is_published", true)
     .order("display_order", { referencedTable: "tenant_workout_preferences" });
 
   if (filters?.category) {
-    query = query.eq("category", filters.category);
+    tenantQuery = tenantQuery.eq("category", filters.category);
   }
 
-  const { data, error } = await query;
-  if (error) {
-    console.error("[getWorkoutsByTenant] Supabase Error:", error);
-    return [];
-  }
-  if (!data) return [];
+  // Global workouts available to all gyms
+  let globalQuery = client
+    .from("workouts")
+    .select("*")
+    .is("tenant_id", null)
+    .eq("is_published", true)
+    .order("created_at");
 
-  // Steps are not fetched here — list views don't need them
-  return data.map((row) => mapWorkoutRow(row, []));
+  if (filters?.category) {
+    globalQuery = globalQuery.eq("category", filters.category);
+  }
+
+  const [tenantResult, globalResult] = await Promise.all([
+    tenantQuery,
+    globalQuery,
+  ]);
+
+  if (tenantResult.error) {
+    console.error("[getWorkoutsByTenant] Tenant Error:", tenantResult.error);
+  }
+  if (globalResult.error) {
+    console.error("[getWorkoutsByTenant] Global Error:", globalResult.error);
+  }
+
+  const tenantWorkouts = (tenantResult.data ?? []).map((row) =>
+    mapWorkoutRow(row, [])
+  );
+  const globalWorkouts = (globalResult.data ?? []).map((row) =>
+    mapWorkoutRow(row, [])
+  );
+
+  // Global workouts first, dedup by id
+  const seen = new Set<string>();
+  const combined: Workout[] = [];
+  for (const w of [...globalWorkouts, ...tenantWorkouts]) {
+    if (!seen.has(w.id)) {
+      seen.add(w.id);
+      combined.push(w);
+    }
+  }
+  return combined;
 }
 
 // ─── getWorkoutBySlugOrId ─────────────────────────────────────────────────────
@@ -127,32 +159,56 @@ export async function getWorkoutBySlugOrId(
   identifier: string
 ): Promise<Workout | null> {
   if (!isSupabaseConfigured) {
+    // Check tenant workouts first, then fall back to global workouts
     const mock =
       mockWorkouts.find(
         (w) =>
           (w.id === identifier || w.slug === identifier) &&
           w.tenantId === tenantId &&
           w.isPublished
-      ) ?? null;
+      ) ??
+      mockWorkouts.find(
+        (w) =>
+          (w.id === identifier || w.slug === identifier) &&
+          w.tenantId === null &&
+          w.isPublished
+      ) ??
+      null;
     return mock;
   }
 
   const client = await createServerSupabaseClient();
 
-  // Try UUID lookup first, fall back to slug
   const isUuid = /^[0-9a-f-]{36}$/i.test(identifier);
-  const { data, error } = await client
+  const field = isUuid ? "id" : "slug";
+
+  // Try tenant-specific workout first
+  const { data: tenantData } = await client
     .from("workouts")
     .select("*")
-    .eq(isUuid ? "id" : "slug", identifier)
+    .eq(field, identifier)
     .eq("tenant_id", tenantId)
     .eq("is_published", true)
     .maybeSingle();
 
-  if (error || !data) return null;
+  if (tenantData) {
+    const steps = await getWorkoutSteps(tenantData.id);
+    return mapWorkoutRow(tenantData, steps);
+  }
 
-  const steps = await getWorkoutSteps(data.id);
-  return mapWorkoutRow(data, steps);
+  // Fall back to global workout
+  const { data: globalData, error } = await client
+    .from("workouts")
+    .select("*")
+    .eq(field, identifier)
+    .is("tenant_id", null)
+    .eq("is_published", true)
+    .maybeSingle();
+
+  if (error || !globalData) return null;
+
+  const steps = await getWorkoutSteps(globalData.id);
+  return mapWorkoutRow(globalData, steps);
 }
 
 // ─── getCategoriesForTenant ───────────────────────────────────────────────────
@@ -162,24 +218,35 @@ export async function getCategoriesForTenant(
 ): Promise<WorkoutCategory[]> {
   if (!isSupabaseConfigured) {
     const workouts = mockWorkouts.filter(
-      (w) => w.tenantId === tenantId && w.isPublished
+      (w) =>
+        (w.tenantId === tenantId || w.tenantId === null) && w.isPublished
     );
     return Array.from(new Set(workouts.map((w) => w.category)));
   }
 
   const client = await createServerSupabaseClient();
-  const { data, error } = await client
-    .from("workouts")
-    .select("category, tenant_workout_preferences!inner(tenant_id)")
-    .eq("tenant_workout_preferences.tenant_id", tenantId)
-    .eq("is_published", true)
-    .not("category", "is", null);
 
-  if (error || !data) return [];
+  const [tenantResult, globalResult] = await Promise.all([
+    client
+      .from("workouts")
+      .select("category, tenant_workout_preferences!inner(tenant_id)")
+      .eq("tenant_workout_preferences.tenant_id", tenantId)
+      .eq("is_published", true)
+      .not("category", "is", null),
+    client
+      .from("workouts")
+      .select("category")
+      .is("tenant_id", null)
+      .eq("is_published", true)
+      .not("category", "is", null),
+  ]);
 
-  return Array.from(
-    new Set(data.map((row) => row.category as WorkoutCategory))
-  );
+  const cats = [
+    ...(tenantResult.data ?? []),
+    ...(globalResult.data ?? []),
+  ].map((row) => row.category as WorkoutCategory);
+
+  return Array.from(new Set(cats));
 }
 
 // ─── getQuickStartWorkoutsForTenant ──────────────────────────────────────────
@@ -190,7 +257,12 @@ export async function getQuickStartWorkoutsForTenant(
 ): Promise<Workout[]> {
   if (!isSupabaseConfigured) {
     return mockWorkouts
-      .filter((w) => w.tenantId === tenantId && w.isPublished && w.isQuickStart)
+      .filter(
+        (w) =>
+          (w.tenantId === tenantId || w.tenantId === null) &&
+          w.isPublished &&
+          w.isQuickStart
+      )
       .slice(0, 3);
   }
 
@@ -217,7 +289,12 @@ export async function getFeaturedWorkoutsForTenant(
 ): Promise<Workout[]> {
   if (!isSupabaseConfigured) {
     return mockWorkouts
-      .filter((w) => w.tenantId === tenantId && w.isPublished && w.isFeatured)
+      .filter(
+        (w) =>
+          (w.tenantId === tenantId || w.tenantId === null) &&
+          w.isPublished &&
+          w.isFeatured
+      )
       .slice(0, count);
   }
 
