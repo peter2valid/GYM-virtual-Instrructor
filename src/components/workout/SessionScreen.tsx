@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreHorizontal,
+  Play,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
@@ -22,7 +23,7 @@ import { WorkoutTimer } from "./WorkoutTimer";
 import { CompletionScreen } from "./CompletionScreen";
 import { useWorkoutSessionStore } from "@/stores/workout-session-store";
 import { useHaptic } from "@/hooks/useHaptic";
-import type { Workout, WorkoutStep } from "@/types";
+import type { Workout } from "@/types";
 
 const ICONS = {
   Flame,
@@ -40,11 +41,20 @@ interface SessionScreenProps {
 
 type Direction = 1 | -1;
 
+/** Format seconds into a human-readable timer string: "45" or "2:30" */
+function fmtDuration(total: number): string {
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return m > 0 ? `${m}:${String(s).padStart(2, "0")}` : String(total);
+}
+
 export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState(0);
   const [direction, setDirection] = useState<Direction>(1);
   const [isComplete, setIsComplete] = useState(false);
+  /** Whether the user has explicitly launched the timer for the current step */
+  const [timerStarted, setTimerStarted] = useState(false);
 
   const { startSession, nextStep: storeNext, completeSession } =
     useWorkoutSessionStore();
@@ -72,6 +82,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
     } else {
       setDirection(1);
       setStepIndex((i) => i + 1);
+      setTimerStarted(false);
       storeNext();
     }
   }
@@ -81,6 +92,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
       haptic.tap();
       setDirection(-1);
       setStepIndex((i) => i - 1);
+      setTimerStarted(false);
     }
   }
 
@@ -88,6 +100,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
     setIsComplete(false);
     setStepIndex(0);
     setDirection(1);
+    setTimerStarted(false);
     startSession(workout.id, workout.steps.length);
   }
 
@@ -100,6 +113,8 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
       />
     );
   }
+
+  const hasTimer = currentStep.durationSeconds !== null;
 
   return (
     <div className="flex min-h-screen flex-col bg-background selection:bg-primary/20">
@@ -154,14 +169,14 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
           </div>
         </div>
 
-        {/* Bottom Gradient for readability on content below */}
+        {/* Bottom Gradient */}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
       </div>
 
       {/* ── Content Area ───────────────────────────────────────────── */}
       <div className="flex flex-1 flex-col -mt-8 relative z-10 rounded-t-[2.5rem] bg-background">
         <div className="mx-auto w-full max-w-xl px-6 pt-8 pb-32">
-          {/* Progress Bar (Integrated) */}
+          {/* Progress Bar */}
           <div className="mb-8">
             <StepProgress current={stepIndex} total={steps.length} />
           </div>
@@ -187,31 +202,73 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
                 )}
               </div>
 
-              {/* Interaction Area (Timer or Stats) */}
-              <div className="py-2">
-                {currentStep.durationSeconds !== null ? (
-                  <WorkoutTimer
-                    key={`timer-${stepIndex}`}
-                    durationSeconds={currentStep.durationSeconds}
-                    onComplete={handleNext}
-                  />
-                ) : (
-                  <div className="grid grid-cols-2 gap-4">
-                    {currentStep.reps !== null && (
-                      <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
-                        <p className="text-4xl font-black text-foreground">{currentStep.reps}</p>
-                        <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Reps</p>
+              {/* ── Interaction Area ─────────────────────────────── */}
+              {hasTimer ? (
+                /* TIMER STEPS: preview → timer */
+                <AnimatePresence mode="wait">
+                  {!timerStarted ? (
+                    /* Preview: show duration + START NOW */
+                    <motion.div
+                      key="preview"
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                      transition={{ duration: 0.2 }}
+                      className="flex flex-col items-center gap-6 pt-2"
+                    >
+                      {/* Duration bubble */}
+                      <div className="flex flex-col items-center gap-2 rounded-[2.5rem] bg-card ring-1 ring-border/40 shadow-badge px-12 py-8">
+                        <span className="text-[5.5rem] font-black tabular-nums tracking-tighter leading-none text-foreground">
+                          {fmtDuration(currentStep.durationSeconds!)}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+                          {currentStep.durationSeconds! >= 60 ? "minutes" : "seconds"}
+                        </span>
                       </div>
-                    )}
-                    {currentStep.sets !== null && (
-                      <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
-                        <p className="text-4xl font-black text-foreground">{currentStep.sets}</p>
-                        <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Sets</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+
+                      {/* START NOW button */}
+                      <button
+                        onClick={() => { haptic.tap(); setTimerStarted(true); }}
+                        className="tap-bounce flex h-16 w-full items-center justify-center gap-3 rounded-[1.25rem] bg-primary text-[15px] font-black tracking-wide text-primary-foreground shadow-pill shadow-primary/30 transition-all hover:-translate-y-0.5"
+                      >
+                        <Play className="h-6 w-6 fill-current" />
+                        START NOW
+                      </button>
+                    </motion.div>
+                  ) : (
+                    /* Timer running */
+                    <motion.div
+                      key="timer"
+                      initial={{ opacity: 0, scale: 0.96 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.35, ease: "easeOut" }}
+                    >
+                      <WorkoutTimer
+                        key={`timer-${stepIndex}`}
+                        durationSeconds={currentStep.durationSeconds!}
+                        onComplete={handleNext}
+                        autoStart={true}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              ) : (
+                /* REPS/SETS STEPS: just show the counts */
+                <div className="grid grid-cols-2 gap-4 py-2">
+                  {currentStep.reps !== null && (
+                    <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
+                      <p className="text-4xl font-black text-foreground">{currentStep.reps}</p>
+                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Reps</p>
+                    </div>
+                  )}
+                  {currentStep.sets !== null && (
+                    <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
+                      <p className="text-4xl font-black text-foreground">{currentStep.sets}</p>
+                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Sets</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
