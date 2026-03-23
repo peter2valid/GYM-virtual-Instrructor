@@ -55,9 +55,7 @@ export function WorkoutTimer({
     <div className="flex flex-col items-center justify-center py-6">
       {/* Timer Container with pulsing effect when running */}
       <div className="relative flex h-64 w-64 items-center justify-center">
-        {/* Anchor plate — grounds the timer visually */}
-        <div className="absolute inset-6 rounded-full bg-card shadow-[0_2px_20px_rgba(0,0,0,0.06)]" />
-        {/* Shadow & Glow */}
+        {/* Pulsing glow — sits below everything via DOM order */}
         <AnimatePresence>
           {isRunning && (
             <motion.div
@@ -70,8 +68,11 @@ export function WorkoutTimer({
           )}
         </AnimatePresence>
 
-        {/* SVG Ring */}
+        {/* SVG Ring — the anchor plate circle lives INSIDE the SVG so it
+            is painted behind the rings but above the background */}
         <svg className="h-full w-full -rotate-90 transform overflow-visible">
+          {/* Anchor plate: r=80 sits inside the ring (r=90) and adapts to theme */}
+          <circle cx="128" cy="128" r="80" className="fill-card" />
           {/* Background Ring */}
           <circle
             cx="128"

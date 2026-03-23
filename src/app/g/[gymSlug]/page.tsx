@@ -1,18 +1,16 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Flame, Dumbbell } from "lucide-react";
+import { ArrowRight, Flame, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import {
-  getQuickStartWorkoutsForTenant,
   getFeaturedWorkoutsForTenant,
   getCategoriesForTenant,
   getWorkoutsByTenant,
 } from "@/features/workouts/queries";
 import { getMemberStats } from "@/features/sessions/queries";
 import { WorkoutCard } from "@/components/workout/WorkoutCard";
-import { DIFFICULTY_STYLES, formatDuration } from "@/lib/utils/workout-ui";
 import { getCategoryIcon } from "@/lib/utils/gym-icons";
 import type { WorkoutCategory } from "@/types";
 
@@ -40,8 +38,7 @@ export default async function GymLandingPage({ params }: Props) {
 
   if (!tenant) notFound();
 
-  const [quickStarts, featured, categories, memberStats] = await Promise.all([
-    getQuickStartWorkoutsForTenant(tenant.id),
+  const [featured, categories, memberStats] = await Promise.all([
     getFeaturedWorkoutsForTenant(tenant.id, 3),
     getCategoriesForTenant(tenant.id),
     user ? getMemberStats(user.id, tenant.id) : Promise.resolve(null),
@@ -215,7 +212,7 @@ export default async function GymLandingPage({ params }: Props) {
                   You trained <span className="font-black text-orange-500">4 days</span> this week. Keep it up!
                 </p>
               </div>
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-110 group-hover:translate-x-0.5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-card shadow-sm ring-1 ring-border transition-transform group-hover:scale-110 group-hover:translate-x-0.5">
                 <ArrowRight className="h-5 w-5 text-orange-500" />
               </div>
             </div>
