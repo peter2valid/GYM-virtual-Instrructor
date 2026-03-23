@@ -137,7 +137,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="flex flex-1 flex-col"
           >
-            {/* Media area — GIF if available, category icon fallback */}
+            {/* Media area — GIF/image if available, styled placeholder otherwise */}
             <div className="relative flex h-52 items-center justify-center overflow-hidden border-b border-border bg-muted/20">
               {currentStep.mediaUrl ? (
                 <>
@@ -148,14 +148,26 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
                     className="h-full w-full object-contain"
                     loading="eager"
                   />
-                  {/* Subtle overlay so text stays legible if we ever overlay text */}
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
                 </>
               ) : (
-                <IconComponent
-                  className="h-12 w-12 text-muted-foreground/20"
-                  strokeWidth={1}
-                />
+                <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-muted/60 via-muted/30 to-background/0 px-6">
+                  {/* Category icon — full opacity, primary-tinted */}
+                  <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-border bg-card shadow-sm">
+                    <IconComponent
+                      className="h-9 w-9 text-primary"
+                      strokeWidth={1.5}
+                    />
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-semibold text-foreground">
+                      {currentStep.title}
+                    </p>
+                    <p className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
+                      {workout.category}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
 

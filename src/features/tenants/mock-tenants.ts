@@ -8,8 +8,8 @@ export const mockTenants: Tenant[] = [
     subscriptionPlan: "starter",
     subscriptionStatus: "active",
     logoUrl: null,
-    primaryColor: null,
-    secondaryColor: null,
+    primaryColor: "#8B1A1A",   // Iron House maroon/red
+    secondaryColor: "#1A1A1A",
     welcomeMessage: null,
     isActive: true,
     createdAt: "2025-01-01T00:00:00.000Z",
