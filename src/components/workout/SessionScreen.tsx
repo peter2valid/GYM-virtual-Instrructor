@@ -9,9 +9,10 @@ import {
   Zap,
   Heart,
   Target,
-  ArrowLeft,
+  X,
   ChevronLeft,
   ChevronRight,
+  MoreHorizontal,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
@@ -101,186 +102,146 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur">
-        <div className="flex h-14 items-center gap-3 px-4">
-          <button
-            onClick={() => router.back()}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-card shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-colors hover:bg-muted"
-            aria-label="Go back"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-foreground">
-              {workout.title}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Step {stepIndex + 1} of {steps.length}
-            </p>
-          </div>
-        </div>
-        <div className="px-4 pb-3">
-          <StepProgress current={stepIndex} total={steps.length} />
-        </div>
-      </header>
-
-      {/* Animated step content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+    <div className="flex min-h-screen flex-col bg-background selection:bg-primary/20">
+      {/* ── Immersive Media Area ────────────────────────────────────── */}
+      <div className="relative h-[48vh] w-full overflow-hidden bg-muted/20">
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={stepIndex}
-            initial={{ opacity: 0, x: direction * 28 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -28 }}
-            transition={{ duration: 0.2, ease: "easeInOut" }}
-            className="flex flex-1 flex-col"
+            initial={{ opacity: 0, scale: 1.05 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+            className="h-full w-full"
           >
-            {/* Media area — taller, more immersive */}
-            <div className="relative flex h-64 items-center justify-center overflow-hidden bg-muted/30">
-              {currentStep.mediaUrl ? (
-                <>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={currentStep.mediaUrl}
-                    alt={currentStep.title}
-                    className="h-full w-full object-contain"
-                    loading="eager"
-                  />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
-                </>
-              ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-muted/50 via-muted/20 to-background/0">
-                  <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-card shadow-[0_2px_12px_rgba(0,0,0,0.1)]">
-                    <IconComponent
-                      className="h-11 w-11 text-primary"
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                    {workout.category}
-                  </p>
+            {currentStep.mediaUrl ? (
+              <img
+                src={currentStep.mediaUrl}
+                alt={currentStep.title}
+                className="h-full w-full object-cover"
+                loading="eager"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center gap-6 bg-gradient-to-br from-primary/10 via-background to-background">
+                <div className="flex h-28 w-28 items-center justify-center rounded-[2rem] bg-card shadow-pill">
+                  <IconComponent className="h-12 w-12 text-primary" strokeWidth={1.5} />
                 </div>
-              )}
-            </div>
-
-            {/* Step content */}
-            <div className="mx-auto w-full max-w-lg flex-1 space-y-5 px-4 py-6">
-              <StepInfo step={currentStep} />
-
-              {currentStep.durationSeconds !== null ? (
-                <WorkoutTimer
-                  key={`timer-${stepIndex}`}
-                  durationSeconds={currentStep.durationSeconds}
-                  onComplete={handleNext}
-                />
-              ) : (
-                <StepMeta step={currentStep} />
-              )}
-            </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
+                  {workout.category}
+                </p>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
+
+        {/* Floating Glass Header */}
+        <div className="absolute top-0 left-0 right-0 z-20 p-4 pt-6">
+          <div className="flex items-center justify-between gap-3">
+            <button
+              onClick={() => router.back()}
+              className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-xl transition-all active:scale-90"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <div className="flex flex-col items-center">
+              <span className="rounded-full bg-black/40 backdrop-blur-md px-3 py-1 text-[11px] font-bold text-white/90 shadow-sm border border-white/10">
+                STEP {stepIndex + 1} OF {steps.length}
+              </span>
+            </div>
+            <button className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-xl transition-all active:scale-90">
+              <MoreHorizontal className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Bottom Gradient for readability on content below */}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent opacity-80" />
       </div>
 
-      {/* Sticky bottom nav */}
-      <div className="sticky bottom-0 bg-background/95 px-4 py-4 backdrop-blur border-t border-border/50">
-        <div className="mx-auto flex max-w-lg items-center gap-3">
+      {/* ── Content Area ───────────────────────────────────────────── */}
+      <div className="flex flex-1 flex-col -mt-8 relative z-10 rounded-t-[2.5rem] bg-background">
+        <div className="mx-auto w-full max-w-xl px-6 pt-8 pb-32">
+          {/* Progress Bar (Integrated) */}
+          <div className="mb-8">
+            <StepProgress current={stepIndex} total={steps.length} />
+          </div>
+
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={stepIndex}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-8"
+            >
+              {/* Step info */}
+              <div className="space-y-4 text-center">
+                <h1 className="text-3xl font-black tracking-tight text-foreground leading-tight px-4">
+                  {currentStep.title}
+                </h1>
+                {currentStep.description && (
+                  <p className="text-base leading-relaxed text-muted-foreground max-w-sm mx-auto">
+                    {currentStep.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Interaction Area (Timer or Stats) */}
+              <div className="py-2">
+                {currentStep.durationSeconds !== null ? (
+                  <WorkoutTimer
+                    key={`timer-${stepIndex}`}
+                    durationSeconds={currentStep.durationSeconds}
+                    onComplete={handleNext}
+                  />
+                ) : (
+                  <div className="grid grid-cols-2 gap-4">
+                    {currentStep.reps !== null && (
+                      <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
+                        <p className="text-4xl font-black text-foreground">{currentStep.reps}</p>
+                        <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Reps</p>
+                      </div>
+                    )}
+                    {currentStep.sets !== null && (
+                      <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
+                        <p className="text-4xl font-black text-foreground">{currentStep.sets}</p>
+                        <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Sets</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* ── Navigation Controls (Floating Bar) ───────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-6 pt-2 pb-8 bg-gradient-to-t from-background via-background to-transparent">
+        <div className="mx-auto flex max-w-lg items-center gap-4">
           <button
             onClick={handlePrev}
             disabled={isFirst}
             className={cn(
-              "flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-colors",
+              "flex h-16 w-16 items-center justify-center rounded-[1.25rem] transition-all",
               isFirst
-                ? "cursor-not-allowed opacity-25 bg-muted"
-                : "bg-card shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:bg-muted active:scale-95"
+                ? "opacity-20 bg-muted cursor-not-allowed"
+                : "bg-card shadow-badge ring-1 ring-border leading-none active:scale-90"
             )}
-            aria-label="Previous step"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-6 w-6" strokeWidth={3} />
           </button>
 
           <button
             onClick={handleNext}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-opacity hover:opacity-90 active:scale-[0.98]"
+            className="flex h-16 flex-1 items-center justify-center gap-3 rounded-[1.25rem] bg-primary text-[15px] font-black tracking-wide text-primary-foreground shadow-pill shadow-primary/25 transition-all active:scale-[0.98] hover:shadow-primary/35"
           >
-            {isLast ? (
-              "Complete Workout"
-            ) : (
-              <>
-                Next Step
-                <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
-              </>
-            )}
+            {isLast ? "FINISH" : "NEXT STEP"}
+            <ChevronRight className="h-5 w-5" strokeWidth={3} />
           </button>
         </div>
       </div>
     </div>
   );
-}
-
-// ─── Sub-components ──────────────────────────────────────────────────────────
-
-function StepInfo({ step }: { step: WorkoutStep }) {
-  const pill =
-    step.reps !== null
-      ? `${step.reps} reps${step.sets ? ` × ${step.sets}` : ""}`
-      : step.durationSeconds !== null
-        ? fmtDuration(step.durationSeconds)
-        : null;
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="text-2xl font-bold leading-snug text-foreground">
-          {step.title}
-        </h2>
-        {pill && (
-          <span className="mt-1 flex-shrink-0 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
-            {pill}
-          </span>
-        )}
-      </div>
-      {step.description && (
-        <p className="text-[15px] leading-relaxed text-muted-foreground">
-          {step.description}
-        </p>
-      )}
-    </div>
-  );
-}
-
-function StepMeta({ step }: { step: WorkoutStep }) {
-  const items = [
-    step.reps !== null && { label: "Reps", value: String(step.reps) },
-    step.sets !== null && { label: "Sets", value: String(step.sets) },
-    step.restSeconds !== null && {
-      label: "Rest",
-      value: `${step.restSeconds}s`,
-    },
-  ].filter(Boolean) as { label: string; value: string }[];
-
-  if (items.length === 0) return null;
-
-  return (
-    <div className="grid grid-cols-3 gap-2.5">
-      {items.map(({ label, value }) => (
-        <div
-          key={label}
-          className="rounded-2xl bg-card px-3 py-4 text-center shadow-[0_1px_4px_rgba(0,0,0,0.07)]"
-        >
-          <p className="text-2xl font-bold text-foreground">{value}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function fmtDuration(s: number): string {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  if (m > 0 && sec > 0) return `${m}m ${sec}s`;
-  if (m > 0) return `${m} min`;
-  return `${s}s`;
 }

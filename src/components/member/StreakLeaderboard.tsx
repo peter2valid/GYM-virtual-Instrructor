@@ -23,8 +23,8 @@ export function StreakLeaderboard({ entries, currentMemberId }: StreakLeaderboar
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
-      <div className="border-b border-border bg-muted/30 px-4 py-3">
+    <div className="rounded-[2rem] bg-card overflow-hidden shadow-badge ring-1 ring-border/5">
+      <div className="border-b border-border/40 bg-muted/20 px-6 py-4">
         <div className="flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             Gym Leaderboard
@@ -45,7 +45,7 @@ export function StreakLeaderboard({ entries, currentMemberId }: StreakLeaderboar
             <div
               key={entry.profileId}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 transition-colors",
+                "flex items-center gap-4 px-6 py-4 transition-colors",
                 isCurrentUser && "bg-primary/5"
               )}
             >

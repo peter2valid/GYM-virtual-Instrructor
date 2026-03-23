@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ChevronRight, Flame } from "lucide-react";
+import { ArrowRight, ChevronRight, Flame, Dumbbell } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import {
@@ -92,119 +93,125 @@ export default async function GymLandingPage({ params }: Props) {
         </div>
       </nav>
 
-      {/* ── Hero ───────────────────────────────────────────────────────── */}
-      <section className="mb-10 mt-2">
-        <h1 className="text-[2rem] sm:text-[2.5rem] font-extrabold leading-tight tracking-tight text-foreground">
-          Ready to train?
-        </h1>
-        <p className="mt-2 text-[15px] sm:text-base text-muted-foreground leading-relaxed">
-          {tenant.welcomeMessage ?? "Pick a workout and start. No account needed."}
-        </p>
-
-        {/* Personalised motivational badge */}
-        {memberStats && memberStats.currentStreak > 0 ? (
-          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-4 py-2">
-            <Flame className="h-4 w-4 text-orange-500" fill="currentColor" />
-            <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
-              {memberStats.currentStreak >= 7
-                ? `${memberStats.currentStreak}-day streak! You're unstoppable!`
-                : memberStats.currentStreak >= 3
-                ? `${memberStats.currentStreak} day streak — you're on a roll!`
-                : `${memberStats.currentStreak} day streak — keep it up!`}
-            </span>
-          </div>
-        ) : memberStats && memberStats.totalSessions > 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">
-            Welcome back{" "}
-            <span className="font-semibold text-foreground">
-              — {memberStats.totalSessions} workout{memberStats.totalSessions !== 1 ? "s" : ""} completed
-            </span>
-            . Ready for one more?
+      {/* ── Hero Banner ─────────────────────────────────────────────────── */}
+      <section className="relative mb-10 mt-4 overflow-hidden rounded-[2.5rem] bg-zinc-900 p-8 text-white shadow-2xl">
+        <div className="relative z-10 max-w-[240px]">
+          <span className="mb-3 inline-block rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-foreground">
+            Featured Program
+          </span>
+          <h1 className="text-3xl font-black leading-tight tracking-tight">
+            6 Week Fat Loss Challenge
+          </h1>
+          <p className="mt-2 text-sm text-white/60 leading-relaxed italic">
+            Transform your body with our most popular home plan.
           </p>
-        ) : null}
-
-        {/* Dominant CTA */}
-        <Link
-          href={`/g/${gymSlug}/workouts`}
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-primary text-[15px] font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-all duration-[120ms] hover:opacity-90 active:scale-[0.98] sm:w-auto sm:px-10"
-        >
-          Browse All Workouts
-          <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.5} />
-        </Link>
+          <Link
+            href={`/g/${gymSlug}/workouts`}
+            className="mt-6 inline-flex h-11 items-center justify-center rounded-2xl bg-white px-6 text-sm font-bold text-black shadow-lg transition-transform active:scale-95"
+          >
+            Start Now
+          </Link>
+        </div>
+        
+        {/* Abstract shapes for "premium" feel */}
+        <div className="absolute -right-12 -top-12 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
+        <div className="absolute -bottom-16 right-0 h-48 w-48 rounded-full bg-blue-500/10 blur-3xl" />
+        
+        {/* Placeholder for "Athletic" feel */}
+        <Dumbbell className="absolute -right-4 bottom-8 h-40 w-40 -rotate-12 text-white/5" strokeWidth={1} />
       </section>
 
-      {/* ── Quick Start ────────────────────────────────────────────────── */}
-      {quickStarts.length > 0 && (
-        <section className="mb-10">
-          <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Start Right Now
+      {/* ── Continue Workout (if exists) ────────────────────────────────── */}
+      {memberStats && memberStats.totalSessions > 0 && (
+        <section className="mb-10 animate-in fade-in slide-in-from-bottom-4">
+          <h2 className="mb-4 text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+            Continue Training
           </h2>
-          <div className="flex flex-col gap-3">
-            {quickStarts.map((workout) => (
+          <div className="group relative overflow-hidden rounded-[2rem] bg-card p-6 shadow-pill ring-1 ring-border/5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-500">
+                  <Flame className="h-6 w-6 fill-current" />
+                </div>
+                <div>
+                  <p className="text-sm font-black text-foreground">Upper Body Blast</p>
+                  <p className="text-xs font-semibold text-muted-foreground">Day 2 · 15 mins remaining</p>
+                </div>
+              </div>
               <Link
-                key={workout.id}
-                href={`/g/${gymSlug}/workouts/${workout.id}`}
-                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-card px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all duration-[150ms] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] active:scale-[0.98]"
+                href={`/g/${gymSlug}/workouts`}
+                className="rounded-xl bg-primary px-5 py-2 text-xs font-bold text-primary-foreground shadow-sm transition-all active:scale-95"
               >
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="h-12 w-12 flex-shrink-0 rounded-xl p-2.5 flex flex-col items-center justify-center text-primary bg-primary/10">
-                    {(() => {
-                      const Icon = getCategoryIcon(workout.category);
-                      return <Icon className="h-full w-full" strokeWidth={2} />;
-                    })()}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[15px] font-bold text-foreground truncate">
-                      {workout.title}
-                    </p>
-                    <p className="mt-1 text-xs font-medium text-muted-foreground">
-                      {workout.category} <span className="opacity-40 mx-1">·</span> {DIFFICULTY_STYLES[workout.difficulty].label}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex shrink-0 items-center gap-2 text-[13px] font-medium text-muted-foreground self-start sm:self-auto pl-16 sm:pl-0">
-                  <span className="px-2.5 py-1 rounded-lg bg-muted text-foreground/70 font-semibold text-xs">{formatDuration(workout.estimatedMinutes)}</span>
-                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:text-foreground" />
-                </div>
+                Resume
               </Link>
-            ))}
+            </div>
           </div>
         </section>
       )}
 
-      {/* ── By category ────────────────────────────────────────────────── */}
+      {/* ── By category (Modern Tiles) ─────────────────────────────────── */}
       {categories.length > 0 && (
         <section className="mb-10">
-          <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Categories
-          </h2>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {categories.map((cat) => (
-              <Link
-                key={cat}
-                href={`/g/${gymSlug}/workouts?category=${encodeURIComponent(cat)}`}
-                className="group flex flex-col items-start gap-3 rounded-2xl bg-card p-4 shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] active:scale-[0.98]"
-              >
-                <div className="flex w-full items-start justify-between">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+              Categories
+            </h2>
+            <Link href={`/g/${gymSlug}/workouts`} className="text-[11px] font-bold text-primary uppercase tracking-wider">
+              See All
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            {categories.slice(0, 4).map((cat) => {
+              const colors = getCategoryColors(cat);
+              return (
+                <Link
+                  key={cat}
+                  href={`/g/${gymSlug}/workouts?category=${encodeURIComponent(cat)}`}
+                  className="group flex flex-col items-center justify-center gap-3 rounded-[2.25rem] bg-card p-6 shadow-badge transition-all hover:shadow-pill active:scale-[0.96]"
+                >
+                  <div className={cn(
+                    "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform group-hover:scale-110",
+                    colors.bg,
+                    colors.text
+                  )}>
                     {(() => {
                       const Icon = getCategoryIcon(cat);
-                      return <Icon className="h-5 w-5" strokeWidth={2} />;
+                      return <Icon className="h-7 w-7" strokeWidth={2.5} />;
                     })()}
                   </div>
-                  <ChevronRight className="h-4 w-4 mt-1 text-muted-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground/60" />
-                </div>
-                <div>
-                  <span className="block text-sm font-bold text-foreground">{cat}</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-muted-foreground/70">
-                    {categoryCounts[cat]} WORKOUT{categoryCounts[cat] !== 1 ? "S" : ""}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                  <div className="text-center">
+                    <span className="block text-sm font-black tracking-tight text-foreground">{cat}</span>
+                    <span className="mt-0.5 block text-[10px] font-bold text-muted-foreground/40 uppercase">
+                      {categoryCounts[cat]} Workouts
+                    </span>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       )}
+
+      {/* ── Progress Teaser ────────────────────────────────────────────── */}
+      {memberStats && (
+        <section className="mb-10 rounded-[2.5rem] bg-primary/5 p-6 ring-1 ring-primary/10">
+          <div className="flex items-center gap-4">
+            <div className="flex flex-1 flex-col gap-1">
+              <p className="text-xs font-black uppercase tracking-widest text-primary/60">Your Progress</p>
+              <h3 className="text-xl font-black text-foreground">
+                You trained {memberStats.totalSessions} days this week 💪
+              </h3>
+            </div>
+            <Link
+              href={`/g/${gymSlug}/progress`}
+              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm transition-transform active:scale-90"
+            >
+              <ArrowRight className="h-5 w-5 text-primary" />
+            </Link>
+          </div>
+        </section>
+      )}
+
 
       {/* ── Featured ───────────────────────────────────────────────────── */}
       {featured.length > 0 && (
@@ -225,4 +232,16 @@ export default async function GymLandingPage({ params }: Props) {
       )}
     </main>
   );
+}
+function getCategoryColors(cat: string) {
+  const map: Record<string, { bg: string; text: string }> = {
+    Abs: { bg: "bg-blue-500/10", text: "text-blue-600" },
+    Cardio: { bg: "bg-green-500/10", text: "text-green-600" },
+    Strength: { bg: "bg-purple-500/10", text: "text-purple-600" },
+    Warmup: { bg: "bg-orange-500/10", text: "text-orange-600" },
+    Legs: { bg: "bg-rose-500/10", text: "text-rose-600" },
+    Back: { bg: "bg-indigo-500/10", text: "text-indigo-600" },
+    Chest: { bg: "bg-sky-500/10", text: "text-sky-600" },
+  };
+  return map[cat] || { bg: "bg-zinc-500/10", text: "text-zinc-600" };
 }

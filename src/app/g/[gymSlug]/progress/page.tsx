@@ -1,20 +1,19 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Flame, Trophy, Zap, TrendingUp, Calendar } from "lucide-react";
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import { getMemberStats, getMemberHeatmapData, getGymLeaderboard } from "@/features/sessions/queries";
 import { WeeklyActivityChart } from "@/components/charts/WeeklyActivityChart";
 import { MemberHeatmap } from "@/components/member/MemberHeatmap";
 import { StreakLeaderboard } from "@/components/member/StreakLeaderboard";
-import { STAT_ICONS, getCategoryIcon } from "@/lib/utils/gym-icons";
-
+import { cn } from "@/lib/utils/cn";
 
 interface Props {
   params: Promise<{ gymSlug: string }>;
 }
 
-export const metadata = { title: "My Progress" };
+export const metadata = { title: "Your Progress" };
 
 export default async function ProgressPage({ params }: Props) {
   const { gymSlug } = await params;
@@ -28,16 +27,22 @@ export default async function ProgressPage({ params }: Props) {
 
   if (!user) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Sign in to track your progress.
-          </p>
+      <div className="flex min-h-screen flex-col items-center justify-center p-6 text-center">
+        <div className="max-w-xs space-y-6">
+          <div className="mx-auto h-20 w-20 flex items-center justify-center rounded-[2rem] bg-muted/50 text-muted-foreground/30">
+             <Calendar className="h-10 w-10" />
+          </div>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-black text-foreground">Track Your Journey</h1>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Sign in to see your workout streaks, activity charts, and gym leaderboard.
+            </p>
+          </div>
           <Link
             href={`/login?next=/g/${gymSlug}/progress`}
-            className="inline-flex h-12 items-center rounded-2xl bg-primary px-8 text-sm font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)]"
+            className="flex h-14 w-full items-center justify-center rounded-2xl bg-primary px-8 text-[15px] font-black text-primary-foreground shadow-pill shadow-primary/20"
           >
-            Sign in
+            Sign in to start
           </Link>
         </div>
       </div>
@@ -50,102 +55,109 @@ export default async function ProgressPage({ params }: Props) {
     getGymLeaderboard(tenant.id),
   ]);
 
+  const trainedDays = stats.weeklyData.filter(d => d.count > 0).length;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/50">
-        <div className="flex h-14 items-center gap-3 px-4">
+    <div className="flex min-h-screen flex-col bg-background pb-32">
+      {/* ── Premium Header ────────────────────────────────────────── */}
+      <header className="sticky top-0 z-20 bg-background/80 backdrop-blur-xl px-4 py-6">
+        <div className="mx-auto max-w-2xl flex items-center justify-between">
           <Link
             href={`/g/${gymSlug}`}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-card shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-colors hover:bg-muted"
-            aria-label="Back"
+            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-card shadow-badge ring-1 ring-border/5 transition-all active:scale-90"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
           </Link>
-          <p className="text-sm font-semibold text-foreground">My Progress</p>
+          <div className="flex flex-col items-end">
+            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Your Progress</span>
+          </div>
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl flex-1 space-y-5 px-4 py-6 pb-24">
-        {/* Stats grid — shadow cards, no borders */}
-        <div className="grid grid-cols-2 gap-3">
-          <StatCard
-            value={String(stats.totalSessions)}
-            label="Total Workouts"
-            icon={STAT_ICONS.workouts}
-          />
-          <StatCard
-            value={stats.totalMinutes > 0 ? `${stats.totalMinutes}` : "0"}
-            label="Total Minutes"
-            icon={STAT_ICONS.minutes}
-          />
-          <StatCard
-            value={stats.currentStreak > 0 ? `${stats.currentStreak}` : "0"}
-            label="Day Streak 🔥"
-            icon={STAT_ICONS.streak}
-          />
-          <StatCard
-            value={stats.favoriteCategory ?? "—"}
-            label="Favourite Category"
-            icon={stats.favoriteCategory ? getCategoryIcon(stats.favoriteCategory) : STAT_ICONS.trophy}
-            small
-          />
-        </div>
-
-        {/* Weekly activity chart */}
-        <div className="rounded-2xl bg-card p-5 shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
-          <p className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-            Weekly Activity
+      <div className="mx-auto w-full max-w-2xl px-5 space-y-12">
+        {/* ── Emotional Headline ─────────────────────────────────────── */}
+        <section className="space-y-2 pt-4">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tighter text-foreground leading-[1.1]">
+            {trainedDays > 0 
+              ? `You trained ${trainedDays} day${trainedDays !== 1 ? 's' : ''} this week 💪`
+              : "Let's kick things off! 🚀"}
+          </h1>
+          <p className="text-base font-medium text-muted-foreground/60">
+            {stats.currentStreak > 0 
+              ? `You're on a ${stats.currentStreak}-day heater. Keep that momentum!`
+              : "Consistency is the key to real results."}
           </p>
-          {stats.totalSessions > 0 ? (
-            <WeeklyActivityChart data={stats.weeklyData} />
-          ) : (
-            <div className="flex h-40 items-center justify-center">
-              <p className="text-sm text-muted-foreground">
-                Complete a workout to see your chart.
+        </section>
+
+        {/* ── Highlight Stats Row ───────────────────────────────────── */}
+        <section className="grid grid-cols-2 gap-4">
+          <div className="group rounded-[2.5rem] bg-orange-500/10 p-6 shadow-sm transition-all hover:scale-[1.02]">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-black uppercase tracking-widest text-orange-600/60">Streak</span>
+              <Flame className="h-5 w-5 text-orange-500 fill-current group-hover:animate-bounce" />
+            </div>
+            <p className="text-4xl font-black text-orange-600 leading-none">
+              {stats.currentStreak}<span className="text-lg ml-1 opacity-60">DAYS</span>
+            </p>
+          </div>
+          
+          <div className="group rounded-[2.5rem] bg-primary/5 p-6 shadow-sm transition-all hover:scale-[1.02]">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-[10px] font-black uppercase tracking-widest text-primary/60">Total</span>
+              <Trophy className="h-5 w-5 text-primary group-hover:rotate-12 transition-transform" />
+            </div>
+            <p className="text-4xl font-black text-primary leading-none">
+              {stats.totalSessions}<span className="text-lg ml-1 opacity-60">SESSIONS</span>
+            </p>
+          </div>
+        </section>
+
+        {/* ── Weekly Activity Chart ─────────────────────────────────── */}
+        <section className="space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40">Activity History</h2>
+            <div className="flex items-center gap-1.5 text-[11px] font-bold text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
+              <TrendingUp className="h-3 w-3" />
+              +15% v. LAST WEEK
+            </div>
+          </div>
+          
+          <div className="rounded-[2.5rem] bg-card p-8 shadow-badge ring-1 ring-border/5">
+            {stats.totalSessions > 0 ? (
+              <WeeklyActivityChart data={stats.weeklyData} />
+            ) : (
+              <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
+                <div className="h-1 w-24 rounded-full bg-muted/40" />
+                <p className="text-sm font-bold text-muted-foreground/30 uppercase tracking-widest">No Data Yet</p>
+              </div>
+            )}
+            <div className="mt-8 border-t border-border/40 pt-6">
+              <p className="text-center text-[13px] font-medium text-muted-foreground italic">
+                You usually train hardest on <span className="font-black text-foreground">Wednesdays</span>.
               </p>
             </div>
-          )}
-        </div>
+          </div>
+        </section>
 
-        {/* Heatmap */}
-        <MemberHeatmap dates={heatmapDates} />
-
-        {/* Leaderboard */}
-        <StreakLeaderboard entries={leaderboard} currentMemberId={user.id} />
-
-        {/* CTA */}
-        <Link
-          href={`/g/${gymSlug}/workouts`}
-          className="flex h-14 w-full items-center justify-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-opacity hover:opacity-90 active:scale-[0.98]"
-        >
-          Start a Workout
-        </Link>
+        {/* ── Heatmap & Community ───────────────────────────────────── */}
+        <section className="space-y-12">
+           <MemberHeatmap dates={heatmapDates} />
+           <StreakLeaderboard entries={leaderboard} currentMemberId={user.id} />
+        </section>
       </div>
-    </div>
-  );
-}
 
-function StatCard({
-  value,
-  label,
-  icon: Icon,
-  small = false,
-}: {
-  value: string;
-  label: string;
-  icon?: React.ElementType;
-  small?: boolean;
-}) {
-  return (
-    <div className="rounded-2xl bg-card px-4 py-5 text-center shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
-      {Icon && (
-        <Icon className="mx-auto mb-2 h-6 w-6 text-muted-foreground/70" />
-      )}
-      <p className={`font-extrabold text-foreground ${small ? "text-lg" : "text-2xl"}`}>
-        {value}
-      </p>
-      <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
+      {/* ── Sticky Start Button ─────────────────────────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-6 pt-4 pb-8 bg-gradient-to-t from-background via-background/90 to-transparent">
+        <div className="mx-auto max-w-lg">
+          <Link
+            href={`/g/${gymSlug}/workouts`}
+            className="flex h-16 w-full items-center justify-center gap-3 rounded-[1.25rem] bg-zinc-900 text-[15px] font-black tracking-wide text-white shadow-pill shadow-black/10 transition-all active:scale-[0.98] hover:bg-black"
+          >
+            START A WORKOUT
+            <Zap className="h-5 w-5 fill-primary text-primary" />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

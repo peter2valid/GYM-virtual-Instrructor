@@ -59,8 +59,8 @@ export function MemberHeatmap({ dates }: MemberHeatmapProps) {
   }, [grid]);
 
   return (
-    <div className="rounded-xl border border-border bg-card p-4">
-      <p className="mb-4 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+    <div className="rounded-[2rem] bg-card p-6 shadow-badge ring-1 ring-border/5">
+      <p className="mb-6 text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40">
         Activity Heatmap
       </p>
 

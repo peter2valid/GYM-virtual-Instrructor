@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils/cn";
 import { useCountdown } from "@/hooks/use-countdown";
 
@@ -29,16 +30,21 @@ export function WorkoutTimer({
   // Advance to next step when timer finishes
   useEffect(() => {
     if (isDone && onComplete) {
-      const id = setTimeout(onComplete, 700);
+      const id = setTimeout(onComplete, 1000); // Slightly more delay for satisfaction
       return () => clearTimeout(id);
     }
   }, [isDone, onComplete]);
 
-  const progress = durationSeconds > 0 ? seconds / durationSeconds : 0;
+  const progress = durationSeconds > 0 ? seconds / durationSeconds : 1;
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   const display =
     mins > 0 ? `${mins}:${String(secs).padStart(2, "0")}` : String(seconds);
+
+  // SVG ring properties
+  const radius = 90;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference * (1 - progress);
 
   function handleToggle() {
     if (isDone) return;
@@ -46,73 +52,115 @@ export function WorkoutTimer({
   }
 
   return (
-    <div className="rounded-2xl bg-card p-6 shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
-      {/* Tap the timer display to play/pause */}
-      <button
-        onClick={handleToggle}
-        disabled={isDone}
-        className={cn(
-          "mb-5 w-full text-center",
-          isDone ? "cursor-default" : "cursor-pointer"
-        )}
-        aria-label={isRunning ? "Pause timer" : "Start timer"}
-      >
-        <span
+    <div className="flex flex-col items-center justify-center py-6">
+      {/* Timer Container with pulsing effect when running */}
+      <div className="relative flex h-64 w-64 items-center justify-center">
+        {/* Shadow & Glow */}
+        <AnimatePresence>
+          {isRunning && (
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1.1, opacity: 0.15 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+              className="absolute inset-0 rounded-full bg-primary"
+            />
+          )}
+        </AnimatePresence>
+
+        {/* SVG Ring */}
+        <svg className="h-full w-full -rotate-90 transform overflow-visible">
+          {/* Background Ring */}
+          <circle
+            cx="128"
+            cy="128"
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="transparent"
+            className="text-muted/20"
+          />
+          {/* Progress Ring */}
+          <motion.circle
+            cx="128"
+            cy="128"
+            r={radius}
+            stroke="currentColor"
+            strokeWidth="8"
+            fill="transparent"
+            strokeLinecap="round"
+            className="text-primary transition-all duration-300 ease-linear"
+            animate={{ strokeDashoffset }}
+            style={{
+              strokeDasharray: circumference,
+            }}
+          />
+        </svg>
+
+        {/* Central Display */}
+        <button
+          onClick={handleToggle}
+          disabled={isDone}
           className={cn(
-            "text-[4.5rem] font-bold tabular-nums tracking-tight leading-none",
-            isDone ? "text-foreground/30" : "text-foreground"
+            "absolute inset-0 flex flex-col items-center justify-center rounded-full transition-all active:scale-95",
+            isDone ? "cursor-default" : "cursor-pointer"
           )}
         >
-          {display}
-        </span>
-        <p className="mt-2 text-xs text-muted-foreground">
-          {isDone ? "Time\u2019s up" : isRunning ? "tap to pause" : "tap to resume"}
-        </p>
-      </button>
-
-      {/* Progress track — taller, more visible */}
-      <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full rounded-full bg-primary transition-all duration-1000"
-          style={{ width: `${progress * 100}%` }}
-        />
+          <motion.span
+            key={display}
+            initial={{ scale: 0.9, opacity: 0.5 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={cn(
+              "text-[5rem] font-black tabular-nums tracking-tighter leading-none",
+              isDone ? "text-muted-foreground/30" : "text-foreground"
+            )}
+          >
+            {display}
+          </motion.span>
+          <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
+            {isDone ? "Done!" : isRunning ? "Pause" : "Start"}
+          </p>
+        </button>
       </div>
 
-      {/* Controls */}
-      <div className="flex items-center justify-center gap-4">
+      {/* Control Buttons */}
+      <div className="mt-10 flex items-center gap-6">
         <button
           onClick={reset}
-          className="flex h-11 w-11 items-center justify-center rounded-full bg-muted transition-colors hover:bg-muted/80"
+          className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-90"
           aria-label="Reset"
         >
-          <RotateCcw className="h-4 w-4 text-muted-foreground" />
+          <RotateCcw className="h-5 w-5" />
         </button>
 
         <button
           onClick={handleToggle}
           disabled={isDone}
           className={cn(
-            "flex h-16 w-16 items-center justify-center rounded-full transition-all",
+            "flex h-20 w-20 items-center justify-center rounded-full transition-all shadow-xl",
             isDone
-              ? "cursor-not-allowed bg-muted opacity-30"
-              : "bg-foreground text-background shadow-[0_2px_8px_rgba(0,0,0,0.2)] hover:opacity-90 active:scale-95"
+              ? "bg-muted opacity-30 cursor-not-allowed"
+              : "bg-primary text-primary-foreground hover:scale-105 active:scale-95 hover:shadow-primary/20"
           )}
-          aria-label={isRunning ? "Pause" : "Start"}
         >
           {isRunning ? (
-            <Pause className="h-5 w-5" fill="currentColor" />
+            <Pause className="h-8 w-8 fill-current" />
           ) : (
-            <Play className="ml-1 h-5 w-5" fill="currentColor" />
+            <Play className="ml-1 h-8 w-8 fill-current" />
           )}
         </button>
 
-        <div className="h-11 w-11" aria-hidden />
+        <div className="w-12" aria-hidden /> {/* Spacer for symmetry */}
       </div>
 
       {isDone && (
-        <p className="mt-4 text-center text-sm font-semibold text-foreground">
-          Time&apos;s up — moving on
-        </p>
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-6 font-bold text-primary"
+        >
+          Great job! Take a breath.
+        </motion.p>
       )}
     </div>
   );

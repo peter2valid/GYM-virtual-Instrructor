@@ -151,6 +151,14 @@
   .safe-area-pb {
     padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
   }
+
+  /* Custom Shadows for Premium UI */
+  .shadow-pill {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  }
+  .shadow-badge {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+  }
 }
 
 /* Smooth page transitions via View Transitions API */
