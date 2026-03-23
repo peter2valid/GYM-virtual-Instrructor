@@ -39,8 +39,9 @@ export function GymBottomNav({ gymSlug }: Props) {
     },
   ];
 
-  // Hide on session pages — full-screen workout experience
+  // Hide on session pages and workout detail pages — full-screen / pre-start experience
   if (pathname.includes("/session")) return null;
+  if (/\/workouts\/[^/]+$/.test(pathname)) return null;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-md safe-area-pb">
