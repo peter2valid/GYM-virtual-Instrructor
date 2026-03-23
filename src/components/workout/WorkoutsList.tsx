@@ -117,16 +117,20 @@ export function WorkoutsList({
                   </h2>
                 )}
                 <div className="space-y-4">
-                  {standardList.map((workout, i) => (
-                    <motion.div
-                      key={workout.id}
-                      initial={{ opacity: 0, y: 6 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: i * 0.05 }}
-                    >
-                      <WorkoutCard workout={workout} gymSlug={gymSlug} />
-                    </motion.div>
-                  ))}
+                  {standardList.map((workout, i) => {
+                    const isSpecial = (i + 1) % 5 === 0;
+                    return (
+                      <motion.div
+                        key={workout.id}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: i * 0.05 }}
+                        className={cn(isSpecial && "rounded-[2rem] bg-primary/5 p-1 ring-1 ring-primary/5")}
+                      >
+                        <WorkoutCard workout={workout} gymSlug={gymSlug} />
+                      </motion.div>
+                    );
+                  })}
                 </div>
               </div>
             </div>

@@ -173,7 +173,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.3 }}
-              className="space-y-8"
+              className="space-y-6"
             >
               {/* Step info */}
               <div className="space-y-4 text-center">
@@ -227,7 +227,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
               "flex h-16 w-16 items-center justify-center rounded-[1.25rem] transition-all",
               isFirst
                 ? "opacity-20 bg-muted cursor-not-allowed"
-                : "bg-card shadow-badge ring-1 ring-border leading-none active:scale-90"
+                : "bg-card shadow-pill ring-1 ring-border/50 hover:-translate-y-0.5 active:scale-90"
             )}
           >
             <ChevronLeft className="h-6 w-6" strokeWidth={3} />
@@ -235,7 +235,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
 
           <button
             onClick={handleNext}
-            className="flex h-16 flex-1 items-center justify-center gap-3 rounded-[1.25rem] bg-primary text-[15px] font-black tracking-wide text-primary-foreground shadow-pill shadow-primary/25 transition-all active:scale-[0.98] hover:shadow-primary/35"
+            className="flex h-16 flex-1 items-center justify-center gap-3 rounded-[1.25rem] bg-primary text-[15px] font-black tracking-wide text-primary-foreground shadow-pill shadow-primary/30 transition-all active:scale-[0.97] hover:shadow-primary/40 hover:-translate-y-0.5"
           >
             {isLast ? "FINISH" : "NEXT STEP"}
             <ChevronRight className="h-5 w-5" strokeWidth={3} />

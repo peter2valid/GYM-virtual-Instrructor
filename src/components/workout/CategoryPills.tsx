@@ -28,10 +28,10 @@ export function CategoryPills({
             key={cat}
             onClick={() => onSelect(cat)}
             className={cn(
-              "flex-shrink-0 flex items-center gap-2 rounded-2xl px-5 py-3 text-[14px] font-black transition-all duration-[150ms] active:scale-[0.96]",
+              "tap-bounce flex-shrink-0 flex items-center gap-2 rounded-2xl px-5 py-3 text-[14px] font-black transition-all duration-[150ms]",
               isActive
-                ? "bg-primary text-primary-foreground shadow-pill shadow-primary/20 scale-105"
-                : "bg-card text-muted-foreground/60 shadow-badge ring-1 ring-border/5 hover:text-foreground hover:bg-muted/50"
+                ? "bg-primary text-primary-foreground shadow-pill ring-2 ring-primary/20"
+                : "bg-background text-muted-foreground/80 ring-1 ring-border/50 hover:ring-border hover:text-foreground hover:bg-muted/40"
             )}
           >
             {IconComponent && (

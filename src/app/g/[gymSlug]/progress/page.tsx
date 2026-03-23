@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Flame, Trophy, Zap, TrendingUp, Calendar } from "lucide-react";
+import { ArrowLeft, Flame, Trophy, Zap, TrendingUp, Calendar, Star, Target, Rocket } from "lucide-react";
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import { getMemberStats, getMemberHeatmapData, getGymLeaderboard } from "@/features/sessions/queries";
@@ -109,6 +109,75 @@ export default async function ProgressPage({ params }: Props) {
             <p className="text-4xl font-black text-primary leading-none">
               {stats.totalSessions}<span className="text-lg ml-1 opacity-60">SESSIONS</span>
             </p>
+          </div>
+        </section>
+
+        {/* ── Milestones ───────────────────────────────────────────── */}
+        <section className="space-y-4">
+          <h2 className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/40 px-2">
+            Milestones
+          </h2>
+          <div className="grid grid-cols-3 gap-3">
+            {[
+              {
+                icon: Flame,
+                label: "5-Day Streak",
+                earned: stats.currentStreak >= 5,
+                color: "text-orange-500",
+                bg: "bg-orange-500/10",
+              },
+              {
+                icon: Trophy,
+                label: "10 Sessions",
+                earned: stats.totalSessions >= 10,
+                color: "text-yellow-500",
+                bg: "bg-yellow-500/10",
+              },
+              {
+                icon: Star,
+                label: "Best Week",
+                earned: trainedDays >= 5,
+                color: "text-purple-500",
+                bg: "bg-purple-500/10",
+              },
+              {
+                icon: Target,
+                label: "25 Sessions",
+                earned: stats.totalSessions >= 25,
+                color: "text-blue-500",
+                bg: "bg-blue-500/10",
+              },
+              {
+                icon: Rocket,
+                label: "30-Day Streak",
+                earned: stats.currentStreak >= 30,
+                color: "text-rose-500",
+                bg: "bg-rose-500/10",
+              },
+              {
+                icon: Zap,
+                label: "50 Sessions",
+                earned: stats.totalSessions >= 50,
+                color: "text-green-500",
+                bg: "bg-green-500/10",
+              },
+            ].map(({ icon: Icon, label, earned, color, bg }) => (
+              <div
+                key={label}
+                className={`flex flex-col items-center gap-2 rounded-[1.5rem] p-4 ring-1 transition-all ${
+                  earned
+                    ? `${bg} ring-current/20`
+                    : "bg-muted/30 ring-border/20 opacity-40"
+                }`}
+              >
+                <div className={`flex h-10 w-10 items-center justify-center rounded-2xl ${earned ? bg : "bg-muted/50"}`}>
+                  <Icon className={`h-5 w-5 ${earned ? color : "text-muted-foreground/30"}`} strokeWidth={2} />
+                </div>
+                <span className={`text-center text-[10px] font-black uppercase tracking-wide leading-tight ${earned ? "text-foreground" : "text-muted-foreground/40"}`}>
+                  {label}
+                </span>
+              </div>
+            ))}
           </div>
         </section>
 

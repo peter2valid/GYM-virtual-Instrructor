@@ -152,12 +152,25 @@
     padding-bottom: max(0.625rem, env(safe-area-inset-bottom));
   }
 
-  /* Custom Shadows for Premium UI */
+  /* Custom Shadows for Premium UI (Sharpened) */
   .shadow-pill {
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
   }
   .shadow-badge {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02), 0 1px 1px rgba(0, 0, 0, 0.01);
+  }
+  .shadow-lift {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Micro-interactions */
+  .tap-bounce {
+    @apply transition-all active:scale-[0.94] duration-100 ease-out;
+  }
+
+  /* Primary glow — use on hero CTAs */
+  .glow-primary {
+    box-shadow: 0 0 24px -4px hsl(var(--primary) / 0.35);
   }
 }
 

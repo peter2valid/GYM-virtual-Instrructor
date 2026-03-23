@@ -55,6 +55,8 @@ export function WorkoutTimer({
     <div className="flex flex-col items-center justify-center py-6">
       {/* Timer Container with pulsing effect when running */}
       <div className="relative flex h-64 w-64 items-center justify-center">
+        {/* Anchor plate — grounds the timer visually */}
+        <div className="absolute inset-6 rounded-full bg-card shadow-[0_2px_20px_rgba(0,0,0,0.06)]" />
         {/* Shadow & Glow */}
         <AnimatePresence>
           {isRunning && (
@@ -124,7 +126,7 @@ export function WorkoutTimer({
       </div>
 
       {/* Control Buttons */}
-      <div className="mt-10 flex items-center gap-6">
+      <div className="mt-6 flex items-center gap-6">
         <button
           onClick={reset}
           className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-90"

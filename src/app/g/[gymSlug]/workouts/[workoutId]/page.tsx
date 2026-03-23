@@ -56,7 +56,7 @@ export default async function WorkoutDetailPage({ params }: Props) {
         <div className="absolute top-0 left-0 right-0 z-20 p-4 pt-6">
           <Link
             href={`/g/${gymSlug}/workouts`}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-xl transition-all active:scale-90"
+            className="tap-bounce flex h-11 w-11 items-center justify-center rounded-2xl bg-black/20 backdrop-blur-md border border-white/10 text-white shadow-xl transition-all"
           >
             <ArrowLeft className="h-5 w-5" />
           </Link>
@@ -64,16 +64,16 @@ export default async function WorkoutDetailPage({ params }: Props) {
 
         {/* Glass Title Card Overlay */}
         <div className="absolute bottom-6 left-4 right-4 z-20">
-          <div className="rounded-[2rem] bg-black/30 backdrop-blur-2xl border border-white/10 p-6 text-white shadow-2xl">
+          <div className="rounded-[1.75rem] bg-black/55 backdrop-blur-md border border-white/10 p-6 text-white shadow-2xl">
             <div className="flex items-center gap-2 mb-2">
-              <span className="rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-foreground">
+              <span className="rounded-full bg-primary px-3 py-1 text-[10px] font-black uppercase tracking-widest text-primary-foreground leading-none">
                 {workout.category}
               </span>
-              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/80 border border-white/5">
+              <span className="rounded-full bg-white/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-white/80 border border-white/5 leading-none">
                 {diff.label}
               </span>
             </div>
-            <h1 className="text-3xl font-black leading-tight tracking-tight">
+            <h1 className="text-3xl font-black leading-tight tracking-tight drop-shadow-md">
               {workout.title}
             </h1>
           </div>
@@ -87,8 +87,8 @@ export default async function WorkoutDetailPage({ params }: Props) {
       <div className="flex-1 w-full max-w-2xl mx-auto px-5 pb-32 pt-10">
         {/* Description */}
         {workout.description && (
-          <p className="text-lg font-medium leading-relaxed text-muted-foreground/80 mb-8 italic">
-            &ldquo;{workout.description}&rdquo;
+          <p className="text-base font-medium leading-relaxed text-muted-foreground mb-8">
+            {workout.description}
           </p>
         )}
 
@@ -156,7 +156,7 @@ export default async function WorkoutDetailPage({ params }: Props) {
         <div className="mx-auto max-w-lg">
           <Link
             href={`/g/${gymSlug}/workouts/${workout.id}/session`}
-            className="flex h-16 w-full items-center justify-center gap-3 rounded-[1.25rem] bg-primary text-[15px] font-black tracking-wide text-primary-foreground shadow-pill shadow-primary/25 transition-all active:scale-[0.98] hover:shadow-primary/35"
+            className="tap-bounce flex h-16 w-full items-center justify-center gap-3 rounded-[1.25rem] bg-zinc-900 text-[15px] font-black tracking-wide text-white shadow-pill shadow-black/10 transition-all hover:bg-black"
           >
             START TRAINING
             <ChevronRight className="h-5 w-5" strokeWidth={3} />

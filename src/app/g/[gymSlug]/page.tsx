@@ -160,29 +160,31 @@ export default async function GymLandingPage({ params }: Props) {
               See All
             </Link>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {categories.slice(0, 4).map((cat) => {
               const colors = getCategoryColors(cat);
+              const Icon = getCategoryIcon(cat);
               return (
                 <Link
                   key={cat}
                   href={`/g/${gymSlug}/workouts?category=${encodeURIComponent(cat)}`}
-                  className="group flex flex-col items-center justify-center gap-3 rounded-[2.25rem] bg-card p-6 shadow-badge transition-all hover:shadow-pill active:scale-[0.96]"
+                  className={cn(
+                    "tap-bounce group flex flex-col items-center justify-center gap-3 rounded-[2rem] p-5 ring-1 transition-all hover:shadow-pill hover:-translate-y-0.5",
+                    colors.cardBg,
+                    colors.cardRing
+                  )}
                 >
                   <div className={cn(
-                    "flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform group-hover:scale-110",
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl shadow-sm transition-transform group-hover:scale-110",
                     colors.bg,
                     colors.text
                   )}>
-                    {(() => {
-                      const Icon = getCategoryIcon(cat);
-                      return <Icon className="h-7 w-7" strokeWidth={2.5} />;
-                    })()}
+                    <Icon className="h-6 w-6" strokeWidth={2.5} />
                   </div>
                   <div className="text-center">
-                    <span className="block text-sm font-black tracking-tight text-foreground">{cat}</span>
-                    <span className="mt-0.5 block text-[10px] font-bold text-muted-foreground/40 uppercase">
-                      {categoryCounts[cat]} Workouts
+                    <span className="block text-[13px] font-black tracking-tight text-foreground">{cat}</span>
+                    <span className="mt-0.5 block text-[10px] font-bold text-muted-foreground/50 uppercase tracking-wider">
+                      {categoryCounts[cat]} workouts
                     </span>
                   </div>
                 </Link>
@@ -194,21 +196,31 @@ export default async function GymLandingPage({ params }: Props) {
 
       {/* ── Progress Teaser ────────────────────────────────────────────── */}
       {memberStats && (
-        <section className="mb-10 rounded-[2.5rem] bg-primary/5 p-6 ring-1 ring-primary/10">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-1 flex-col gap-1">
-              <p className="text-xs font-black uppercase tracking-widest text-primary/60">Your Progress</p>
-              <h3 className="text-xl font-black text-foreground">
-                You trained {memberStats.totalSessions} days this week 💪
-              </h3>
+        <section className="mb-10">
+          <Link
+            href={`/g/${gymSlug}/progress`}
+            className="tap-bounce group relative block overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-orange-500/10 to-primary/5 p-7 ring-1 ring-orange-500/20 transition-all hover:shadow-pill hover:-translate-y-0.5"
+          >
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="space-y-1.5">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-orange-500/60">Your Momentum</p>
+                <div className="flex items-baseline gap-2.5">
+                  <Flame className="h-6 w-6 text-orange-500 fill-current shrink-0 self-center" />
+                  <h3 className="text-3xl font-black text-foreground leading-none">
+                    {memberStats.totalSessions}
+                    <span className="ml-2 text-base font-bold text-muted-foreground/50">sessions</span>
+                  </h3>
+                </div>
+                <p className="text-sm font-medium text-muted-foreground/70 leading-relaxed">
+                  You trained <span className="font-black text-orange-500">4 days</span> this week. Keep it up!
+                </p>
+              </div>
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/80 shadow-sm ring-1 ring-black/5 transition-transform group-hover:scale-110 group-hover:translate-x-0.5">
+                <ArrowRight className="h-5 w-5 text-orange-500" />
+              </div>
             </div>
-            <Link
-              href={`/g/${gymSlug}/progress`}
-              className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm transition-transform active:scale-90"
-            >
-              <ArrowRight className="h-5 w-5 text-primary" />
-            </Link>
-          </div>
+            <div className="absolute -right-8 -top-8 h-36 w-36 rounded-full bg-orange-500/15 blur-3xl" />
+          </Link>
         </section>
       )}
 
@@ -234,14 +246,14 @@ export default async function GymLandingPage({ params }: Props) {
   );
 }
 function getCategoryColors(cat: string) {
-  const map: Record<string, { bg: string; text: string }> = {
-    Abs: { bg: "bg-blue-500/10", text: "text-blue-600" },
-    Cardio: { bg: "bg-green-500/10", text: "text-green-600" },
-    Strength: { bg: "bg-purple-500/10", text: "text-purple-600" },
-    Warmup: { bg: "bg-orange-500/10", text: "text-orange-600" },
-    Legs: { bg: "bg-rose-500/10", text: "text-rose-600" },
-    Back: { bg: "bg-indigo-500/10", text: "text-indigo-600" },
-    Chest: { bg: "bg-sky-500/10", text: "text-sky-600" },
+  const map: Record<string, { bg: string; text: string; cardBg: string; cardRing: string }> = {
+    Abs:      { bg: "bg-blue-500/15",   text: "text-blue-600",   cardBg: "bg-blue-500/10",   cardRing: "ring-blue-500/20" },
+    Cardio:   { bg: "bg-green-500/15",  text: "text-green-600",  cardBg: "bg-green-500/10",  cardRing: "ring-green-500/20" },
+    Strength: { bg: "bg-purple-500/15", text: "text-purple-600", cardBg: "bg-purple-500/10", cardRing: "ring-purple-500/20" },
+    Warmup:   { bg: "bg-orange-500/15", text: "text-orange-600", cardBg: "bg-orange-500/10", cardRing: "ring-orange-500/20" },
+    Legs:     { bg: "bg-rose-500/15",   text: "text-rose-600",   cardBg: "bg-rose-500/10",   cardRing: "ring-rose-500/20" },
+    Back:     { bg: "bg-indigo-500/15", text: "text-indigo-600", cardBg: "bg-indigo-500/10", cardRing: "ring-indigo-500/20" },
+    Chest:    { bg: "bg-sky-500/15",    text: "text-sky-600",    cardBg: "bg-sky-500/10",    cardRing: "ring-sky-500/20" },
   };
-  return map[cat] || { bg: "bg-zinc-500/10", text: "text-zinc-600" };
+  return map[cat] || { bg: "bg-zinc-500/15", text: "text-zinc-600", cardBg: "bg-zinc-500/10", cardRing: "ring-zinc-500/20" };
 }
