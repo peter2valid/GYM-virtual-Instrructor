@@ -16,9 +16,9 @@ export function SignOutButton({ gymSlug }: { gymSlug: string }) {
   return (
     <button
       onClick={handleSignOut}
-      className="text-xs text-muted-foreground hover:text-foreground"
+      className="rounded-xl border border-border px-3.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
     >
-      Sign Out
+      Sign out
     </button>
   );
 }

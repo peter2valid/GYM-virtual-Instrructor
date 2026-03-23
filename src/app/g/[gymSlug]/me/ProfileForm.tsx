@@ -39,10 +39,8 @@ export function ProfileForm({ initialData }: Props) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="rounded-xl border border-border bg-card p-5 space-y-4"
+      className="space-y-4"
     >
-      <h2 className="text-sm font-semibold text-foreground">Edit Profile</h2>
-
       {error && (
         <p className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2.5 text-sm text-destructive">
           {error}
