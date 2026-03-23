@@ -11,15 +11,19 @@ interface UseCountdownReturn {
   reset: () => void;
 }
 
-export function useCountdown(initialSeconds: number): UseCountdownReturn {
+export function useCountdown(
+  initialSeconds: number,
+  options?: { autoStart?: boolean }
+): UseCountdownReturn {
   const [seconds, setSeconds] = useState(initialSeconds);
-  const [isRunning, setIsRunning] = useState(false);
+  const [isRunning, setIsRunning] = useState(options?.autoStart ?? false);
 
   // Reset when initialSeconds changes (new step loaded)
   useEffect(() => {
-    setIsRunning(false);
+    setIsRunning(options?.autoStart ?? false);
     setSeconds(initialSeconds);
-  }, [initialSeconds]);
+  }, [initialSeconds, options?.autoStart]);
+
 
   useEffect(() => {
     if (!isRunning) return;

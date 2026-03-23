@@ -3,9 +3,12 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
-import { getMemberStats } from "@/features/sessions/queries";
+import { getMemberStats, getMemberHeatmapData, getGymLeaderboard } from "@/features/sessions/queries";
 import { WeeklyActivityChart } from "@/components/charts/WeeklyActivityChart";
+import { MemberHeatmap } from "@/components/member/MemberHeatmap";
+import { StreakLeaderboard } from "@/components/member/StreakLeaderboard";
 import { STAT_ICONS, getCategoryIcon } from "@/lib/utils/gym-icons";
+
 
 interface Props {
   params: Promise<{ gymSlug: string }>;
@@ -41,7 +44,12 @@ export default async function ProgressPage({ params }: Props) {
     );
   }
 
-  const stats = await getMemberStats(user.id, tenant.id);
+  const [stats, heatmapDates, leaderboard] = await Promise.all([
+    getMemberStats(user.id, tenant.id),
+    getMemberHeatmapData(user.id, tenant.id),
+    getGymLeaderboard(tenant.id),
+  ]);
+
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -99,6 +107,13 @@ export default async function ProgressPage({ params }: Props) {
             </div>
           )}
         </div>
+
+        {/* Heatmap */}
+        <MemberHeatmap dates={heatmapDates} />
+
+        {/* Leaderboard */}
+        <StreakLeaderboard entries={leaderboard} currentMemberId={user.id} />
+
 
         {/* CTA */}
         <Link

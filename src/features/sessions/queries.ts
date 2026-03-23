@@ -561,7 +561,108 @@ export async function getAllTenants(): Promise<TenantSummary[]> {
   }));
 }
 
+// ─── getMemberHeatmapData ──────────────────────────────────────────────────
+export async function getMemberHeatmapData(
+  memberId: string,
+  tenantId: string
+): Promise<string[]> {
+  if (!isSupabaseConfigured) return [];
+
+  const client = await createServerSupabaseClient();
+  const { data, error } = await client
+    .from("workout_sessions")
+    .select("completed_at")
+    .eq("member_id", memberId)
+    .eq("tenant_id", tenantId)
+    .eq("status", "completed")
+    .order("completed_at", { ascending: true });
+
+  if (error || !data) return [];
+
+  return data
+    .map((s) => s.completed_at)
+    .filter(Boolean)
+    .map((dt) => new Date(dt).toISOString().split("T")[0]);
+}
+
+// ─── getGymLeaderboard ────────────────────────────────────────────────────────
+export interface LeaderboardEntry {
+  profileId: string;
+  fullName: string | null;
+  avatarUrl: string | null;
+  streak: number;
+}
+
+export async function getGymLeaderboard(
+  tenantId: string,
+  limit = 10
+): Promise<LeaderboardEntry[]> {
+  if (!isSupabaseConfigured) return [];
+
+  const client = await createServerSupabaseClient();
+
+  // Get all members and their completed sessions
+  const [profilesRes, sessionsRes] = await Promise.all([
+    client
+      .from("profiles")
+      .select("id, full_name, avatar_url")
+      .eq("tenant_id", tenantId)
+      .eq("role", "member"),
+    client
+      .from("workout_sessions")
+      .select("member_id, completed_at")
+      .eq("tenant_id", tenantId)
+      .eq("status", "completed")
+      .order("completed_at", { ascending: false }),
+  ]);
+
+  if (!profilesRes.data || !sessionsRes.data) return [];
+
+  const profiles = profilesRes.data;
+  const sessions = sessionsRes.data;
+
+  // Group sessions by member
+  const memberSessions: Record<string, Set<string>> = {};
+  for (const s of sessions) {
+    if (!s.completed_at) continue;
+    if (!memberSessions[s.member_id]) memberSessions[s.member_id] = new Set();
+    memberSessions[s.member_id].add(new Date(s.completed_at).toISOString().split("T")[0]);
+  }
+
+  // Calculate streak for each member
+  const leaderboard: LeaderboardEntry[] = profiles.map((p) => {
+    const daysSet = memberSessions[p.id] || new Set();
+    let streak = 0;
+    const today = new Date();
+    
+    // Streak logic (consistent with getMemberStats)
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().split("T")[0];
+      if (daysSet.has(key)) {
+        streak++;
+      } else if (i > 0) {
+        break;
+      }
+    }
+    
+    return {
+      profileId: p.id,
+      fullName: p.full_name,
+      avatarUrl: p.avatar_url,
+      streak,
+    };
+  });
+
+  return leaderboard
+    .sort((a, b) => b.streak - a.streak)
+    .filter(entry => entry.streak > 0)
+    .slice(0, limit);
+}
+
 // ─── Utilities ────────────────────────────────────────────────────────────────
+
 
 function getWeekStart(): string {
   const d = new Date();
