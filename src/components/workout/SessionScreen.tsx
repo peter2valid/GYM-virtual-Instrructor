@@ -107,7 +107,7 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
         <div className="flex h-14 items-center gap-3 px-4">
           <button
             onClick={() => router.back()}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-colors hover:bg-accent"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-card shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-colors hover:bg-muted"
             aria-label="Go back"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -137,8 +137,8 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
             transition={{ duration: 0.2, ease: "easeInOut" }}
             className="flex flex-1 flex-col"
           >
-            {/* Media area — GIF/image if available, styled placeholder otherwise */}
-            <div className="relative flex h-52 items-center justify-center overflow-hidden border-b border-border bg-muted/20">
+            {/* Media area — taller, more immersive */}
+            <div className="relative flex h-64 items-center justify-center overflow-hidden bg-muted/30">
               {currentStep.mediaUrl ? (
                 <>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -148,25 +148,19 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
                     className="h-full w-full object-contain"
                     loading="eager"
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/10 to-transparent" />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
                 </>
               ) : (
-                <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-muted/60 via-muted/30 to-background/0 px-6">
-                  {/* Category icon — full opacity, primary-tinted */}
-                  <div className="flex h-20 w-20 items-center justify-center rounded-3xl border border-border bg-card shadow-sm">
+                <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-gradient-to-b from-muted/50 via-muted/20 to-background/0">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-card shadow-[0_2px_12px_rgba(0,0,0,0.1)]">
                     <IconComponent
-                      className="h-9 w-9 text-primary"
+                      className="h-11 w-11 text-primary"
                       strokeWidth={1.5}
                     />
                   </div>
-                  <div className="text-center">
-                    <p className="text-sm font-semibold text-foreground">
-                      {currentStep.title}
-                    </p>
-                    <p className="mt-0.5 text-[11px] font-medium uppercase tracking-widest text-muted-foreground/60">
-                      {workout.category}
-                    </p>
-                  </div>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                    {workout.category}
+                  </p>
                 </div>
               )}
             </div>
@@ -190,16 +184,16 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
       </div>
 
       {/* Sticky bottom nav */}
-      <div className="sticky bottom-0 border-t border-border bg-background/95 px-4 py-4 backdrop-blur">
+      <div className="sticky bottom-0 bg-background/95 px-4 py-4 backdrop-blur border-t border-border/50">
         <div className="mx-auto flex max-w-lg items-center gap-3">
           <button
             onClick={handlePrev}
             disabled={isFirst}
             className={cn(
-              "flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl border border-border transition-colors",
+              "flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl transition-colors",
               isFirst
-                ? "cursor-not-allowed opacity-25"
-                : "hover:bg-accent active:scale-95"
+                ? "cursor-not-allowed opacity-25 bg-muted"
+                : "bg-card shadow-[0_1px_4px_rgba(0,0,0,0.08)] hover:bg-muted active:scale-95"
             )}
             aria-label="Previous step"
           >
@@ -208,14 +202,14 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
 
           <button
             onClick={handleNext}
-            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:scale-[0.98]"
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-opacity hover:opacity-90 active:scale-[0.98]"
           >
             {isLast ? (
               "Complete Workout"
             ) : (
               <>
                 Next Step
-                <ChevronRight className="h-4 w-4" />
+                <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
               </>
             )}
           </button>
@@ -238,11 +232,11 @@ function StepInfo({ step }: { step: WorkoutStep }) {
   return (
     <div className="space-y-3">
       <div className="flex items-start justify-between gap-3">
-        <h2 className="text-xl font-bold leading-snug text-foreground">
+        <h2 className="text-2xl font-bold leading-snug text-foreground">
           {step.title}
         </h2>
         {pill && (
-          <span className="mt-0.5 flex-shrink-0 rounded-lg border border-border bg-muted px-2.5 py-1 text-sm font-semibold text-foreground">
+          <span className="mt-1 flex-shrink-0 rounded-lg bg-primary/10 px-3 py-1.5 text-sm font-bold text-primary">
             {pill}
           </span>
         )}
@@ -273,9 +267,9 @@ function StepMeta({ step }: { step: WorkoutStep }) {
       {items.map(({ label, value }) => (
         <div
           key={label}
-          className="rounded-xl border border-border bg-card px-3 py-3.5 text-center"
+          className="rounded-2xl bg-card px-3 py-4 text-center shadow-[0_1px_4px_rgba(0,0,0,0.07)]"
         >
-          <p className="text-xl font-bold text-foreground">{value}</p>
+          <p className="text-2xl font-bold text-foreground">{value}</p>
           <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
         </div>
       ))}

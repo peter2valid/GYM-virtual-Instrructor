@@ -34,11 +34,11 @@ export default async function WorkoutDetailPage({ params }: Props) {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Sticky header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/50">
         <div className="flex h-14 items-center gap-3 px-4">
           <Link
             href={`/g/${gymSlug}/workouts`}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-colors hover:bg-accent"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-card shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-colors hover:bg-muted"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -50,21 +50,21 @@ export default async function WorkoutDetailPage({ params }: Props) {
       {/* Content — padded from sticky CTA */}
       <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 pb-28 pt-6">
         {/* Title block */}
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {(() => {
               const Icon = getCategoryIcon(workout.category);
-              return <Icon className="h-4 w-4" strokeWidth={2.5} />;
+              return <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />;
             })()}
-            <span>{workout.category}</span>
+            <span className="font-medium">{workout.category}</span>
             <span className="text-muted-foreground/30">·</span>
             {(() => {
               const Icon = getDifficultyIcon(workout.difficulty);
-              return <Icon className="h-4 w-4" strokeWidth={2.5} />;
+              return <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />;
             })()}
-            <span>{diff.label}</span>
+            <span className="font-medium">{diff.label}</span>
           </div>
-          <h1 className="text-2xl font-bold leading-tight text-foreground">
+          <h1 className="text-2xl font-extrabold leading-tight text-foreground">
             {workout.title}
           </h1>
           {workout.description && (
@@ -74,26 +74,26 @@ export default async function WorkoutDetailPage({ params }: Props) {
           )}
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-2">
+        {/* Stats — tinted, no hard border */}
+        <div className="grid grid-cols-3 gap-2.5">
           <Stat label="Duration" value={formatDuration(workout.estimatedMinutes)} icon={STAT_ICONS.duration} />
           <Stat label="Steps" value={String(steps.length)} icon={STAT_ICONS.steps} />
           <Stat label="Level" value={diff.label} icon={getDifficultyIcon(workout.difficulty)} />
         </div>
 
         {/* Steps preview */}
-        <div className="space-y-2">
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <div className="space-y-3">
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
             What&apos;s included
           </p>
-          <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+          <div className="flex flex-col gap-2">
             {steps.map((step, i) => (
-              <div key={step.id} className="flex items-start gap-3 px-4 py-3.5">
-                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-muted text-[11px] font-semibold text-muted-foreground">
+              <div key={step.id} className="flex items-start gap-3 rounded-xl bg-card px-4 py-3.5 shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                <span className="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary">
                   {i + 1}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-sm font-semibold text-foreground">
                     {step.title}
                   </p>
                   {stepMeta(step) && (
@@ -109,14 +109,14 @@ export default async function WorkoutDetailPage({ params }: Props) {
       </div>
 
       {/* Sticky CTA */}
-      <div className="fixed bottom-0 left-0 right-0 border-t border-border bg-background/95 px-4 py-4 backdrop-blur">
+      <div className="fixed bottom-0 left-0 right-0 bg-background/95 px-4 py-4 backdrop-blur border-t border-border/50">
         <div className="mx-auto max-w-2xl">
           <Link
             href={`/g/${gymSlug}/workouts/${workout.id}/session`}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 active:scale-[0.98]"
+            className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-opacity hover:opacity-90 active:scale-[0.98]"
           >
             Start Workout
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
           </Link>
         </div>
       </div>
@@ -128,11 +128,11 @@ export default async function WorkoutDetailPage({ params }: Props) {
 
 function Stat({ label, value, icon: Icon }: { label: string; value: string; icon?: React.ElementType }) {
   return (
-    <div className="rounded-xl border border-border bg-card px-3 py-3 text-center">
+    <div className="rounded-2xl bg-card px-3 py-4 text-center shadow-[0_1px_3px_rgba(0,0,0,0.07)]">
       {Icon && (
-        <Icon className="mx-auto mb-2 h-6 w-6 text-muted-foreground opacity-80" strokeWidth={2.5} />
+        <Icon className="mx-auto mb-2 h-5 w-5 text-primary/70" strokeWidth={2} />
       )}
-      <p className="text-base font-bold text-foreground">{value}</p>
+      <p className="text-base font-extrabold text-foreground">{value}</p>
       <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>
     </div>
   );

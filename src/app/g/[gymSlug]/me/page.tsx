@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { Flame, ChevronRight, History, TrendingUp, Settings, LogOut } from "lucide-react";
+import { Flame, ChevronRight, History, TrendingUp, LogOut } from "lucide-react";
 import { getAuthUser } from "@/features/auth/actions";
 import { getTenantBySlug } from "@/features/tenants/queries";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
@@ -71,7 +71,7 @@ export default async function MemberProfilePage({ params }: Props) {
           ← {tenant.name}
         </Link>
         <span className="text-base font-bold text-foreground tracking-tight">Profile</span>
-        <div className="w-[72px]" /> {/* spacer to center the title */}
+        <div className="w-[72px]" />
       </nav>
 
       {/* ── Avatar + identity ──────────────────────────────────────── */}
@@ -81,10 +81,10 @@ export default async function MemberProfilePage({ params }: Props) {
           <img
             src={profile.avatar_url}
             alt={displayName}
-            className="h-24 w-24 rounded-full object-cover ring-4 ring-border"
+            className="h-24 w-24 rounded-full object-cover shadow-[0_0_0_4px_hsl(var(--background)),0_0_0_6px_hsl(var(--primary)/0.3)]"
           />
         ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-extrabold text-primary-foreground shadow-sm">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-primary text-3xl font-extrabold text-primary-foreground shadow-[0_0_0_4px_hsl(var(--background)),0_0_0_6px_hsl(var(--primary)/0.25),0_4px_16px_rgba(0,0,0,0.12)]">
             {initials}
           </div>
         )}
@@ -92,14 +92,14 @@ export default async function MemberProfilePage({ params }: Props) {
           <h1 className="text-xl font-extrabold tracking-tight text-foreground">{displayName}</h1>
           <p className="mt-0.5 text-sm text-muted-foreground">{user.email}</p>
           {memberSince && (
-            <p className="mt-1 text-xs text-muted-foreground/70">Member since {memberSince}</p>
+            <p className="mt-1 text-xs text-muted-foreground/60">Member since {memberSince}</p>
           )}
         </div>
 
         {/* Streak badge */}
         {memberStats.currentStreak > 0 && (
-          <div className="inline-flex items-center gap-1.5 rounded-xl border border-orange-500/20 bg-orange-500/10 px-3.5 py-2">
-            <Flame className="h-4 w-4 text-orange-500" />
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-orange-500/10 px-4 py-2">
+            <Flame className="h-4 w-4 text-orange-500" fill="currentColor" />
             <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
               {memberStats.currentStreak}-day streak
             </span>
@@ -107,24 +107,24 @@ export default async function MemberProfilePage({ params }: Props) {
         )}
       </section>
 
-      {/* ── Stats ───────────────────────────────────────────────────── */}
+      {/* ── Stats — shadow cards, no borders ────────────────────────── */}
       <section className="mb-8">
         <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Your Stats
         </h2>
         <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-border bg-card px-3 py-4 text-center shadow-sm">
+          <div className="rounded-2xl bg-card px-3 py-5 text-center shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
             <p className="text-2xl font-extrabold text-foreground">{sessionCount ?? 0}</p>
             <p className="mt-1 text-xs font-medium text-muted-foreground">Workouts</p>
           </div>
-          <div className="rounded-2xl border border-border bg-card px-3 py-4 text-center shadow-sm">
+          <div className="rounded-2xl bg-card px-3 py-5 text-center shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
             <p className="text-2xl font-extrabold text-foreground">{attendanceCount ?? 0}</p>
             <p className="mt-1 text-xs font-medium text-muted-foreground">Check-Ins</p>
           </div>
-          <div className="rounded-2xl border border-border bg-card px-3 py-4 text-center shadow-sm">
+          <div className="rounded-2xl bg-card px-3 py-5 text-center shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
             <div className="flex items-center justify-center gap-1">
               {memberStats.currentStreak > 0 && (
-                <Flame className="h-5 w-5 text-orange-500" />
+                <Flame className="h-5 w-5 text-orange-500" fill="currentColor" />
               )}
               <p className="text-2xl font-extrabold text-foreground">
                 {memberStats.currentStreak}
@@ -143,10 +143,10 @@ export default async function MemberProfilePage({ params }: Props) {
         <div className="flex flex-col gap-2.5">
           <Link
             href={`/g/${gymSlug}/history`}
-            className="group flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-all hover:border-border/80 hover:shadow-md active:scale-[0.98]"
+            className="group flex items-center gap-4 rounded-2xl bg-card px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] active:scale-[0.98]"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-              <History className="h-5 w-5" strokeWidth={2.5} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <History className="h-5 w-5" strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-bold text-foreground">Workout History</p>
@@ -157,10 +157,10 @@ export default async function MemberProfilePage({ params }: Props) {
 
           <Link
             href={`/g/${gymSlug}/progress`}
-            className="group flex items-center gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-all hover:border-border/80 hover:shadow-md active:scale-[0.98]"
+            className="group flex items-center gap-4 rounded-2xl bg-card px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] active:scale-[0.98]"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-              <TrendingUp className="h-5 w-5" strokeWidth={2.5} />
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <TrendingUp className="h-5 w-5" strokeWidth={2} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-[15px] font-bold text-foreground">Progress</p>
@@ -176,12 +176,9 @@ export default async function MemberProfilePage({ params }: Props) {
         <h2 className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
           Account
         </h2>
-        <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-            <Settings className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-semibold text-foreground">Edit Profile</span>
-          </div>
-          <div className="p-5">
+        <div className="rounded-2xl bg-card shadow-[0_1px_4px_rgba(0,0,0,0.07)] overflow-hidden">
+          <div className="px-5 pt-5 pb-4">
+            <p className="text-sm font-bold text-foreground mb-4">Edit Profile</p>
             <ProfileForm
               initialData={{
                 fullName: profile?.full_name ?? "",
@@ -195,14 +192,14 @@ export default async function MemberProfilePage({ params }: Props) {
 
       {/* ── Sign out ────────────────────────────────────────────────── */}
       <section>
-        <div className="rounded-2xl border border-border bg-card shadow-sm">
+        <div className="rounded-2xl bg-card shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
           <div className="flex items-center justify-between px-5 py-4">
             <div className="flex items-center gap-3">
               <LogOut className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-semibold text-foreground">Sign Out</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Signed in as {user.email}
+                  {user.email}
                 </p>
               </div>
             </div>

@@ -46,78 +46,71 @@ export function WorkoutTimer({
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5">
-      {/* Tap the timer display to play/pause — accommodates sweaty/shaky hands */}
+    <div className="rounded-2xl bg-card p-6 shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
+      {/* Tap the timer display to play/pause */}
       <button
         onClick={handleToggle}
         disabled={isDone}
         className={cn(
-          "mb-4 w-full text-center",
+          "mb-5 w-full text-center",
           isDone ? "cursor-default" : "cursor-pointer"
         )}
         aria-label={isRunning ? "Pause timer" : "Start timer"}
       >
         <span
           className={cn(
-            "text-5xl font-bold tabular-nums tracking-tight",
-            isDone ? "text-foreground/40" : "text-foreground"
+            "text-[4.5rem] font-bold tabular-nums tracking-tight leading-none",
+            isDone ? "text-foreground/30" : "text-foreground"
           )}
         >
           {display}
         </span>
-        {mins > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isDone ? "Time\u2019s up" : isRunning ? "tap to pause" : "tap to resume"}
-          </p>
-        )}
-        {mins === 0 && !isDone && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            {isRunning ? "tap to pause" : "tap to resume"}
-          </p>
-        )}
+        <p className="mt-2 text-xs text-muted-foreground">
+          {isDone ? "Time\u2019s up" : isRunning ? "tap to pause" : "tap to resume"}
+        </p>
       </button>
 
-      {/* Progress track */}
-      <div className="mb-5 h-[3px] w-full overflow-hidden rounded-full bg-muted">
+      {/* Progress track — taller, more visible */}
+      <div className="mb-6 h-1.5 w-full overflow-hidden rounded-full bg-muted">
         <div
-          className="h-full rounded-full bg-foreground transition-all duration-1000"
+          className="h-full rounded-full bg-primary transition-all duration-1000"
           style={{ width: `${progress * 100}%` }}
         />
       </div>
 
       {/* Controls */}
-      <div className="flex items-center justify-center gap-3">
+      <div className="flex items-center justify-center gap-4">
         <button
           onClick={reset}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-border transition-colors hover:bg-accent"
+          className="flex h-11 w-11 items-center justify-center rounded-full bg-muted transition-colors hover:bg-muted/80"
           aria-label="Reset"
         >
-          <RotateCcw className="h-3.5 w-3.5 text-muted-foreground" />
+          <RotateCcw className="h-4 w-4 text-muted-foreground" />
         </button>
 
         <button
           onClick={handleToggle}
           disabled={isDone}
           className={cn(
-            "flex h-14 w-14 items-center justify-center rounded-full border transition-colors",
+            "flex h-16 w-16 items-center justify-center rounded-full transition-all",
             isDone
-              ? "cursor-not-allowed border-border opacity-30"
-              : "border-foreground bg-foreground text-background hover:opacity-90 active:scale-95"
+              ? "cursor-not-allowed bg-muted opacity-30"
+              : "bg-foreground text-background shadow-[0_2px_8px_rgba(0,0,0,0.2)] hover:opacity-90 active:scale-95"
           )}
           aria-label={isRunning ? "Pause" : "Start"}
         >
           {isRunning ? (
-            <Pause className="h-5 w-5" />
+            <Pause className="h-5 w-5" fill="currentColor" />
           ) : (
-            <Play className="ml-0.5 h-5 w-5" />
+            <Play className="ml-1 h-5 w-5" fill="currentColor" />
           )}
         </button>
 
-        <div className="h-10 w-10" aria-hidden />
+        <div className="h-11 w-11" aria-hidden />
       </div>
 
       {isDone && (
-        <p className="mt-3 text-center text-sm font-medium text-foreground">
+        <p className="mt-4 text-center text-sm font-semibold text-foreground">
           Time&apos;s up — moving on
         </p>
       )}

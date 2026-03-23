@@ -35,7 +35,7 @@ export default async function ProgressPage({ params }: Props) {
           </p>
           <Link
             href={`/login?next=/g/${gymSlug}/progress`}
-            className="inline-flex h-10 items-center rounded-xl bg-primary px-6 text-sm font-semibold text-primary-foreground"
+            className="inline-flex h-12 items-center rounded-2xl bg-primary px-8 text-sm font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)]"
           >
             Sign in
           </Link>
@@ -53,11 +53,11 @@ export default async function ProgressPage({ params }: Props) {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur">
+      <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border/50">
         <div className="flex h-14 items-center gap-3 px-4">
           <Link
             href={`/g/${gymSlug}`}
-            className="flex h-9 w-9 items-center justify-center rounded-full border border-border transition-colors hover:bg-accent"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-card shadow-[0_1px_3px_rgba(0,0,0,0.1)] transition-colors hover:bg-muted"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4" />
@@ -66,8 +66,8 @@ export default async function ProgressPage({ params }: Props) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-2xl flex-1 space-y-6 px-4 py-6 pb-24">
-        {/* Stats grid */}
+      <div className="mx-auto w-full max-w-2xl flex-1 space-y-5 px-4 py-6 pb-24">
+        {/* Stats grid — shadow cards, no borders */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard
             value={String(stats.totalSessions)}
@@ -93,8 +93,8 @@ export default async function ProgressPage({ params }: Props) {
         </div>
 
         {/* Weekly activity chart */}
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        <div className="rounded-2xl bg-card p-5 shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
+          <p className="mb-4 text-xs font-bold uppercase tracking-widest text-muted-foreground">
             Weekly Activity
           </p>
           {stats.totalSessions > 0 ? (
@@ -114,11 +114,10 @@ export default async function ProgressPage({ params }: Props) {
         {/* Leaderboard */}
         <StreakLeaderboard entries={leaderboard} currentMemberId={user.id} />
 
-
         {/* CTA */}
         <Link
           href={`/g/${gymSlug}/workouts`}
-          className="flex h-12 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          className="flex h-14 w-full items-center justify-center rounded-2xl bg-primary text-sm font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-opacity hover:opacity-90 active:scale-[0.98]"
         >
           Start a Workout
         </Link>
@@ -139,11 +138,11 @@ function StatCard({
   small?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-card px-4 py-4 text-center">
+    <div className="rounded-2xl bg-card px-4 py-5 text-center shadow-[0_1px_4px_rgba(0,0,0,0.07)]">
       {Icon && (
-        <Icon className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
+        <Icon className="mx-auto mb-2 h-6 w-6 text-muted-foreground/70" />
       )}
-      <p className={`font-bold text-foreground ${small ? "text-lg" : "text-2xl"}`}>
+      <p className={`font-extrabold text-foreground ${small ? "text-lg" : "text-2xl"}`}>
         {value}
       </p>
       <p className="mt-0.5 text-xs text-muted-foreground">{label}</p>

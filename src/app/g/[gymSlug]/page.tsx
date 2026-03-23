@@ -77,14 +77,14 @@ export default async function GymLandingPage({ params }: Props) {
           {user ? (
             <Link
               href={`/g/${gymSlug}/me`}
-              className="rounded-full bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary hover:bg-primary/20 transition-colors"
+              className="rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
             >
               My Profile
             </Link>
           ) : (
             <Link
               href={`/login?next=/g/${gymSlug}`}
-              className="rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-foreground hover:bg-accent transition-colors"
+              className="rounded-full bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.12)] transition-shadow"
             >
               Sign In
             </Link>
@@ -94,20 +94,20 @@ export default async function GymLandingPage({ params }: Props) {
 
       {/* ── Hero ───────────────────────────────────────────────────────── */}
       <section className="mb-10 mt-2">
-        <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight tracking-tight text-foreground">
+        <h1 className="text-[2rem] sm:text-[2.5rem] font-extrabold leading-tight tracking-tight text-foreground">
           Ready to train?
         </h1>
-        <p className="mt-3 text-[15px] sm:text-base text-muted-foreground leading-relaxed">
+        <p className="mt-2 text-[15px] sm:text-base text-muted-foreground leading-relaxed">
           {tenant.welcomeMessage ?? "Pick a workout and start. No account needed."}
         </p>
 
         {/* Personalised motivational badge */}
         {memberStats && memberStats.currentStreak > 0 ? (
-          <div className="mt-5 inline-flex items-center gap-2 rounded-xl border border-orange-500/20 bg-orange-500/10 px-3.5 py-2">
-            <Flame className="h-4 w-4 text-orange-500" />
+          <div className="mt-4 inline-flex items-center gap-2 rounded-full bg-orange-500/10 px-4 py-2">
+            <Flame className="h-4 w-4 text-orange-500" fill="currentColor" />
             <span className="text-sm font-bold text-orange-600 dark:text-orange-400">
               {memberStats.currentStreak >= 7
-                ? `🔥 ${memberStats.currentStreak}-day streak! You're unstoppable!`
+                ? `${memberStats.currentStreak}-day streak! You're unstoppable!`
                 : memberStats.currentStreak >= 3
                 ? `${memberStats.currentStreak} day streak — you're on a roll!`
                 : `${memberStats.currentStreak} day streak — keep it up!`}
@@ -126,7 +126,7 @@ export default async function GymLandingPage({ params }: Props) {
         {/* Dominant CTA */}
         <Link
           href={`/g/${gymSlug}/workouts`}
-          className="mt-6 flex h-[3.25rem] w-full items-center justify-center gap-2 rounded-xl bg-primary text-[15px] font-bold text-primary-foreground shadow-sm transition-all duration-[120ms] hover:opacity-90 active:scale-[0.98] sm:w-auto sm:px-8"
+          className="mt-5 flex h-14 w-full items-center justify-center gap-2.5 rounded-2xl bg-primary text-[15px] font-bold text-primary-foreground shadow-[0_2px_8px_rgba(0,0,0,0.18)] transition-all duration-[120ms] hover:opacity-90 active:scale-[0.98] sm:w-auto sm:px-10"
         >
           Browse All Workouts
           <ArrowRight className="h-[18px] w-[18px]" strokeWidth={2.5} />
@@ -144,13 +144,13 @@ export default async function GymLandingPage({ params }: Props) {
               <Link
                 key={workout.id}
                 href={`/g/${gymSlug}/workouts/${workout.id}`}
-                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border bg-card px-5 py-4 shadow-sm transition-all duration-[150ms] hover:border-border/80 hover:shadow-md active:scale-[0.98]"
+                className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl bg-card px-5 py-4 shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all duration-[150ms] hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] active:scale-[0.98]"
               >
                 <div className="flex items-center gap-4 min-w-0">
                   <div className="h-12 w-12 flex-shrink-0 rounded-xl p-2.5 flex flex-col items-center justify-center text-primary bg-primary/10">
                     {(() => {
                       const Icon = getCategoryIcon(workout.category);
-                      return <Icon className="h-full w-full" strokeWidth={2.5} />;
+                      return <Icon className="h-full w-full" strokeWidth={2} />;
                     })()}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -158,12 +158,12 @@ export default async function GymLandingPage({ params }: Props) {
                       {workout.title}
                     </p>
                     <p className="mt-1 text-xs font-medium text-muted-foreground">
-                      {workout.category} <span className="opacity-50 mx-1">•</span> {DIFFICULTY_STYLES[workout.difficulty].label}
+                      {workout.category} <span className="opacity-40 mx-1">·</span> {DIFFICULTY_STYLES[workout.difficulty].label}
                     </p>
                   </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2 text-[13px] font-medium text-muted-foreground self-start sm:self-auto pl-16 sm:pl-0">
-                  <span className="px-2.5 py-1 rounded-md bg-secondary text-secondary-foreground">{formatDuration(workout.estimatedMinutes)}</span>
+                  <span className="px-2.5 py-1 rounded-lg bg-muted text-foreground/70 font-semibold text-xs">{formatDuration(workout.estimatedMinutes)}</span>
                   <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1 group-hover:text-foreground" />
                 </div>
               </Link>
@@ -183,20 +183,20 @@ export default async function GymLandingPage({ params }: Props) {
               <Link
                 key={cat}
                 href={`/g/${gymSlug}/workouts?category=${encodeURIComponent(cat)}`}
-                className="group flex flex-col items-start gap-4 rounded-2xl border border-border bg-card p-4 shadow-sm transition-all hover:border-border/80 hover:shadow-md active:scale-[0.98]"
+                className="group flex flex-col items-start gap-3 rounded-2xl bg-card p-4 shadow-[0_1px_4px_rgba(0,0,0,0.07)] transition-all hover:shadow-[0_4px_14px_rgba(0,0,0,0.1)] active:scale-[0.98]"
               >
                 <div className="flex w-full items-start justify-between">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent text-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                     {(() => {
                       const Icon = getCategoryIcon(cat);
-                      return <Icon className="h-5 w-5" strokeWidth={2.5} />;
+                      return <Icon className="h-5 w-5" strokeWidth={2} />;
                     })()}
                   </div>
-                  <ChevronRight className="h-4 w-4 mt-1 text-muted-foreground/40 transition-transform group-hover:translate-x-0.5 group-hover:text-foreground/80" />
+                  <ChevronRight className="h-4 w-4 mt-1 text-muted-foreground/30 transition-transform group-hover:translate-x-0.5 group-hover:text-muted-foreground/60" />
                 </div>
                 <div>
                   <span className="block text-sm font-bold text-foreground">{cat}</span>
-                  <span className="mt-1 block text-[11px] font-semibold text-muted-foreground">
+                  <span className="mt-0.5 block text-[11px] font-semibold text-muted-foreground/70">
                     {categoryCounts[cat]} WORKOUT{categoryCounts[cat] !== 1 ? "S" : ""}
                   </span>
                 </div>
