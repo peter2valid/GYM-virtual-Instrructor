@@ -33,8 +33,12 @@ export function WorkoutCard({ workout, gymSlug }: WorkoutCardProps) {
           {diff.label}
           <Dot />
           {formatDuration(workout.estimatedMinutes)}
-          <Dot />
-          {workout.steps.length} steps
+          {(workout.stepCount ?? workout.steps.length) > 0 && (
+            <>
+              <Dot />
+              {workout.stepCount ?? workout.steps.length} steps
+            </>
+          )}
         </p>
       </div>
       <ChevronRight className="h-4 w-4 flex-shrink-0 text-muted-foreground/30 transition-transform duration-[120ms] group-hover:translate-x-0.5 group-hover:text-muted-foreground/60" />

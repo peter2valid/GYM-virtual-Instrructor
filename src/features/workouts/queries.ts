@@ -25,6 +25,11 @@ function mapStepRow(row: any): WorkoutStep {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapWorkoutRow(row: any, steps: WorkoutStep[] = []): Workout {
+  // Supabase returns step count as workout_steps: [{count: N}] when using count()
+  const dbStepCount = Array.isArray(row.workout_steps)
+    ? (row.workout_steps[0]?.count as number | undefined)
+    : undefined;
+
   return {
     id: row.id,
     tenantId: row.tenant_id ?? null,
@@ -39,6 +44,7 @@ function mapWorkoutRow(row: any, steps: WorkoutStep[] = []): Workout {
     isPublished: row.is_published,
     sourceType: row.source_type,
     steps,
+    stepCount: steps.length > 0 ? steps.length : dbStepCount,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -97,10 +103,10 @@ export async function getWorkoutsByTenant(
 
   const client = await createServerSupabaseClient();
 
-  // Tenant-specific workouts ordered by preference
+  // Tenant-specific workouts ordered by preference (with step count)
   let tenantQuery = client
     .from("workouts")
-    .select(`*, tenant_workout_preferences!inner(display_order)`)
+    .select(`*, tenant_workout_preferences!inner(display_order), workout_steps(count)`)
     .eq("tenant_workout_preferences.tenant_id", tenantId)
     .eq("is_published", true)
     .order("display_order", { referencedTable: "tenant_workout_preferences" });
@@ -109,10 +115,10 @@ export async function getWorkoutsByTenant(
     tenantQuery = tenantQuery.eq("category", filters.category);
   }
 
-  // Global workouts available to all gyms
+  // Global workouts available to all gyms (with step count)
   let globalQuery = client
     .from("workouts")
-    .select("*")
+    .select("*, workout_steps(count)")
     .is("tenant_id", null)
     .eq("is_published", true)
     .order("created_at");
@@ -269,7 +275,7 @@ export async function getQuickStartWorkoutsForTenant(
   const client = await createServerSupabaseClient();
   const { data, error } = await client
     .from("workouts")
-    .select("*, tenant_workout_preferences!inner(display_order, is_quick_start)")
+    .select("*, tenant_workout_preferences!inner(display_order, is_quick_start), workout_steps(count)")
     .eq("tenant_workout_preferences.tenant_id", tenantId)
     .eq("tenant_workout_preferences.is_quick_start", true)
     .eq("is_published", true)
@@ -301,7 +307,7 @@ export async function getFeaturedWorkoutsForTenant(
   const client = await createServerSupabaseClient();
   const { data, error } = await client
     .from("workouts")
-    .select("*, tenant_workout_preferences!inner(display_order, is_recommended)")
+    .select("*, tenant_workout_preferences!inner(display_order, is_recommended), workout_steps(count)")
     .eq("tenant_workout_preferences.tenant_id", tenantId)
     .eq("tenant_workout_preferences.is_recommended", true)
     .eq("is_published", true)

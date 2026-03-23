@@ -48,6 +48,7 @@ function LoginPageInner() {
   const emailForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: "", password: "" },
+    mode: "onChange",
   });
 
   const phoneForm = useForm<z.infer<typeof phoneSchema>>({

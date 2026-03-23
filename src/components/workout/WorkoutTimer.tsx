@@ -1,22 +1,32 @@
 "use client";
 
 import { useEffect } from "react";
-import { Play, Pause, RotateCcw } from "lucide-react";
+import { Pause, Play, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { useCountdown } from "@/hooks/use-countdown";
 
 interface WorkoutTimerProps {
   durationSeconds: number;
   onComplete?: () => void;
+  /** Auto-start the timer when this component mounts. Defaults to true. */
+  autoStart?: boolean;
 }
 
 export function WorkoutTimer({
   durationSeconds,
   onComplete,
+  autoStart = true,
 }: WorkoutTimerProps) {
   const { seconds, isRunning, isDone, start, pause, reset } =
     useCountdown(durationSeconds);
 
+  // Auto-start on mount
+  useEffect(() => {
+    if (autoStart && !isDone) start();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Advance to next step when timer finishes
   useEffect(() => {
     if (isDone && onComplete) {
       const id = setTimeout(onComplete, 700);
@@ -28,12 +38,25 @@ export function WorkoutTimer({
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   const display =
-    mins > 0 ? `${mins}:${String(secs).padStart(2, "0")}` : String(secs);
+    mins > 0 ? `${mins}:${String(secs).padStart(2, "0")}` : String(seconds);
+
+  function handleToggle() {
+    if (isDone) return;
+    isRunning ? pause() : start();
+  }
 
   return (
     <div className="rounded-xl border border-border bg-card p-5">
-      {/* Time display */}
-      <div className="mb-4 text-center">
+      {/* Tap the timer display to play/pause — accommodates sweaty/shaky hands */}
+      <button
+        onClick={handleToggle}
+        disabled={isDone}
+        className={cn(
+          "mb-4 w-full text-center",
+          isDone ? "cursor-default" : "cursor-pointer"
+        )}
+        aria-label={isRunning ? "Pause timer" : "Start timer"}
+      >
         <span
           className={cn(
             "text-5xl font-bold tabular-nums tracking-tight",
@@ -43,9 +66,16 @@ export function WorkoutTimer({
           {display}
         </span>
         {mins > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">remaining</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isDone ? "Time\u2019s up" : isRunning ? "tap to pause" : "tap to resume"}
+          </p>
         )}
-      </div>
+        {mins === 0 && !isDone && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            {isRunning ? "tap to pause" : "tap to resume"}
+          </p>
+        )}
+      </button>
 
       {/* Progress track */}
       <div className="mb-5 h-[3px] w-full overflow-hidden rounded-full bg-muted">
@@ -66,7 +96,7 @@ export function WorkoutTimer({
         </button>
 
         <button
-          onClick={isRunning ? pause : start}
+          onClick={handleToggle}
           disabled={isDone}
           className={cn(
             "flex h-14 w-14 items-center justify-center rounded-full border transition-colors",
@@ -87,8 +117,8 @@ export function WorkoutTimer({
       </div>
 
       {isDone && (
-        <p className="mt-3 text-center text-sm text-muted-foreground">
-          Time&apos;s up
+        <p className="mt-3 text-center text-sm font-medium text-foreground">
+          Time&apos;s up — moving on
         </p>
       )}
     </div>

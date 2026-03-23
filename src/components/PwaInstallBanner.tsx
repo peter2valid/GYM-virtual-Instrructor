@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -10,6 +11,12 @@ interface BeforeInstallPromptEvent extends Event {
 export function PwaInstallBanner() {
   const [prompt, setPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  const [visible, setVisible] = useState(false);
+  const pathname = usePathname();
+
+  // Hide on session pages and workout detail pages — full-screen experience
+  const isWorkoutActive =
+    pathname.includes("/session") || /\/workouts\/[^/]+$/.test(pathname);
 
   useEffect(() => {
     // Don't show if already installed (standalone mode)
@@ -21,6 +28,8 @@ export function PwaInstallBanner() {
     const handler = (e: Event) => {
       e.preventDefault();
       setPrompt(e as BeforeInstallPromptEvent);
+      // Delay the visual appearance by 4 seconds so it never blocks first interaction
+      setTimeout(() => setVisible(true), 4000);
     };
 
     window.addEventListener("beforeinstallprompt", handler);
@@ -39,10 +48,10 @@ export function PwaInstallBanner() {
     localStorage.setItem("pwa-banner-dismissed", "1");
   }
 
-  if (!prompt || dismissed) return null;
+  if (!prompt || dismissed || !visible || isWorkoutActive) return null;
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-sm rounded-2xl border border-border bg-card p-4 shadow-lg">
+    <div className="fixed bottom-[4.5rem] left-4 right-4 z-50 mx-auto max-w-sm rounded-2xl border border-border bg-card p-4 shadow-lg">
       <div className="flex items-start gap-3">
         <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground text-lg font-bold">
           G

@@ -51,6 +51,8 @@ export interface Workout {
   isPublished: boolean;
   sourceType: "tenant" | "global";
   steps: WorkoutStep[];
+  /** Pre-fetched step count for list views where steps[] is empty. */
+  stepCount?: number;
   createdAt: string;
   updatedAt: string;
 }
