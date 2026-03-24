@@ -146,6 +146,51 @@ insert into workouts (id, tenant_id, title, slug, description, category, difficu
    'Full Body', 'intermediate', 35, true, false, true, 80, 'tenant')
 on conflict (id) do nothing;
 
+-- ─── WORKOUT TEMPLATES (V2) ──────────────────────────────────────────────────
+
+insert into workout_templates (id, gym_id, title, slug, description, category, difficulty, estimated_duration_minutes, is_featured, is_quick_start, is_published, source_type) values
+  ('00000000-0000-0000-0004-000000000001', '00000000-0000-0000-0001-000000000001',
+   'Dynamic Warmup Flow', 'dynamic-warmup-flow',
+   'A full-body activation sequence to prime your joints and muscles before any training session.',
+   'Warmup', 'beginner', 10, false, true, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000002', '00000000-0000-0000-0001-000000000001',
+   'Dumbbell Chest Press', 'dumbbell-chest-press',
+   'A beginner-friendly chest session using dumbbells to build foundational pressing strength and muscle.',
+   'Chest', 'beginner', 25, true, true, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000003', '00000000-0000-0000-0001-000000000001',
+   'Push-Up Burn', 'push-up-burn',
+   'An equipment-free chest and tricep burner using progressive push-up variations.',
+   'Chest', 'intermediate', 20, false, false, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000004', '00000000-0000-0000-0001-000000000001',
+   'Pull-Up Strength', 'pull-up-strength',
+   'Build pulling strength and back width through a structured pull-up progression and accessory work.',
+   'Back', 'intermediate', 30, true, false, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000005', '00000000-0000-0000-0001-000000000001',
+   'Seated Cable Row', 'seated-cable-row',
+   'A focused back thickness session built around the seated cable row and dumbbell accessories.',
+   'Back', 'beginner', 25, false, false, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000006', '00000000-0000-0000-0001-000000000001',
+   'Leg Day Starter', 'leg-day-starter',
+   'A foundational lower body session covering all major leg muscle groups with manageable volume.',
+   'Legs', 'beginner', 35, true, false, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000007', '00000000-0000-0000-0001-000000000001',
+   'Squat & Lunge Circuit', 'squat-lunge-circuit',
+   'An intermediate lower body circuit combining barbell squats, lunges, and explosive movements.',
+   'Legs', 'intermediate', 30, false, false, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000008', '00000000-0000-0000-0001-000000000001',
+   'Treadmill Fat Burn', 'treadmill-fat-burn',
+   'A structured 30-minute treadmill session with alternating intensity zones for fat burning.',
+   'Cardio', 'beginner', 30, false, true, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000009', '00000000-0000-0000-0001-000000000001',
+   'HIIT Cardio Blast', 'hiit-cardio-blast',
+   'High-intensity intervals using bodyweight movements. Maximum effort, minimum equipment.',
+   'Cardio', 'advanced', 25, true, false, true, 'tenant'),
+  ('00000000-0000-0000-0004-000000000010', '00000000-0000-0000-0001-000000000001',
+   'Kettlebell Conditioning', 'kettlebell-conditioning',
+   'A full-body kettlebell session that builds strength, power, and conditioning simultaneously.',
+   'Full Body', 'intermediate', 35, true, false, true, 'tenant')
+on conflict (id) do nothing;
+
 -- ─── WORKOUT STEPS ────────────────────────────────────────────────────────────
 
 -- Dynamic Warmup Flow (5 steps)
@@ -238,6 +283,13 @@ insert into workout_steps (id, workout_id, step_order, title, instruction_text, 
   ('00000000-0000-0000-0005-000000000044', '00000000-0000-0000-0004-000000000005', 4, 'Face Pull',
    'Set a cable to head height with a rope attachment. Pull the rope toward your face, separating the handles at the end. Targets rear delts and rotator cuff.',
    15, 3, 45, null)
+on conflict (id) do nothing;
+
+-- ─── WORKOUT TEMPLATE ITEMS (V2) ─────────────────────────────────────────────
+
+insert into workout_template_items (id, workout_template_id, step_order, title, instruction_text, reps, sets, rest_seconds, duration_seconds)
+select id, workout_id, step_order, title, instruction_text, reps, sets, rest_seconds, duration_seconds
+from workout_steps
 on conflict (id) do nothing;
 
 -- Leg Day Starter (5 steps)

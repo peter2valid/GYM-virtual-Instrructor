@@ -10,7 +10,7 @@ import type { Workout, WorkoutCategory, WorkoutStep } from "@/types";
 function mapStepRow(row: any): WorkoutStep {
   return {
     id: row.id,
-    workoutId: row.workout_id,
+    workoutId: row.workout_template_id || row.workout_id,
     exerciseId: row.exercise_id ?? null,
     order: row.step_order,
     title: row.title,
@@ -25,24 +25,27 @@ function mapStepRow(row: any): WorkoutStep {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapWorkoutRow(row: any, steps: WorkoutStep[] = []): Workout {
-  // Supabase returns step count as workout_steps: [{count: N}] when using count()
-  const dbStepCount = Array.isArray(row.workout_steps)
-    ? (row.workout_steps[0]?.count as number | undefined)
+  // Supabase returns step count as workout_template_items: [{count: N}] when using count()
+  const dbStepCount = Array.isArray(row.workout_template_items)
+    ? (row.workout_template_items[0]?.count as number | undefined)
     : undefined;
 
   return {
     id: row.id,
-    tenantId: row.tenant_id ?? null,
+    tenantId: row.gym_id || row.tenant_id || null,
     slug: row.slug,
     title: row.title,
     description: row.description ?? null,
     category: row.category as WorkoutCategory,
-    difficulty: row.difficulty,
+    difficulty:
+      row.difficulty === "expert"
+        ? "advanced"
+        : (row.difficulty as "beginner" | "intermediate" | "advanced"),
     estimatedMinutes: row.estimated_duration_minutes ?? null,
     isFeatured: row.is_featured,
     isQuickStart: row.is_quick_start,
     isPublished: row.is_published,
-    sourceType: row.source_type,
+    sourceType: row.source_type === "gym" ? "tenant" : row.source_type,
     steps,
     stepCount: steps.length > 0 ? steps.length : dbStepCount,
     createdAt: row.created_at,
@@ -56,10 +59,10 @@ function mapWorkoutRow(row: any, steps: WorkoutStep[] = []): Workout {
 async function getWorkoutSteps(workoutId: string): Promise<WorkoutStep[]> {
   const client = await createServerSupabaseClient();
   const { data, error } = await client
-    .from("workout_steps")
+    .from("workout_template_items")
     .select("*")
-    .eq("workout_id", workoutId)
-    .order("step_order");
+    .eq("workout_template_id", workoutId)
+    .order("step_order", { ascending: true });
 
   if (error || !data) return [];
 
@@ -103,13 +106,13 @@ export async function getWorkoutsByTenant(
 
   const client = await createServerSupabaseClient();
 
-  // Tenant-specific workouts ordered by preference (with step count)
+  // Tenant-specific workouts (with step count)
   let tenantQuery = client
-    .from("workouts")
-    .select(`*, tenant_workout_preferences!inner(display_order), workout_steps(count)`)
-    .eq("tenant_workout_preferences.tenant_id", tenantId)
+    .from("workout_templates")
+    .select(`*, workout_template_items(count)`)
+    .eq("gym_id", tenantId)
     .eq("is_published", true)
-    .order("display_order", { referencedTable: "tenant_workout_preferences" });
+    .order("created_at", { ascending: false });
 
   if (filters?.category) {
     tenantQuery = tenantQuery.eq("category", filters.category);
@@ -117,9 +120,9 @@ export async function getWorkoutsByTenant(
 
   // Global workouts available to all gyms (with step count)
   let globalQuery = client
-    .from("workouts")
-    .select("*, workout_steps(count)")
-    .is("tenant_id", null)
+    .from("workout_templates")
+    .select("*, workout_template_items(count)")
+    .is("gym_id", null)
     .eq("is_published", true)
     .order("created_at");
 
@@ -190,10 +193,10 @@ export async function getWorkoutBySlugOrId(
 
   // Try tenant-specific workout first
   const { data: tenantData } = await client
-    .from("workouts")
+    .from("workout_templates")
     .select("*")
     .eq(field, identifier)
-    .eq("tenant_id", tenantId)
+    .eq("gym_id", tenantId)
     .eq("is_published", true)
     .maybeSingle();
 
@@ -204,10 +207,10 @@ export async function getWorkoutBySlugOrId(
 
   // Fall back to global workout
   const { data: globalData, error } = await client
-    .from("workouts")
+    .from("workout_templates")
     .select("*")
     .eq(field, identifier)
-    .is("tenant_id", null)
+    .is("gym_id", null)
     .eq("is_published", true)
     .maybeSingle();
 
@@ -234,15 +237,15 @@ export async function getCategoriesForTenant(
 
   const [tenantResult, globalResult] = await Promise.all([
     client
-      .from("workouts")
-      .select("category, tenant_workout_preferences!inner(tenant_id)")
-      .eq("tenant_workout_preferences.tenant_id", tenantId)
+      .from("workout_templates")
+      .select("category")
+      .eq("gym_id", tenantId)
       .eq("is_published", true)
       .not("category", "is", null),
     client
-      .from("workouts")
+      .from("workout_templates")
       .select("category")
-      .is("tenant_id", null)
+      .is("gym_id", null)
       .eq("is_published", true)
       .not("category", "is", null),
   ]);
@@ -274,12 +277,12 @@ export async function getQuickStartWorkoutsForTenant(
 
   const client = await createServerSupabaseClient();
   const { data, error } = await client
-    .from("workouts")
-    .select("*, tenant_workout_preferences!inner(display_order, is_quick_start), workout_steps(count)")
-    .eq("tenant_workout_preferences.tenant_id", tenantId)
-    .eq("tenant_workout_preferences.is_quick_start", true)
+    .from("workout_templates")
+    .select("*, workout_template_items(count)")
+    .eq("gym_id", tenantId)
+    .eq("is_quick_start", true)
     .eq("is_published", true)
-    .order("display_order", { referencedTable: "tenant_workout_preferences" })
+    .order("created_at", { ascending: false })
     .limit(3);
 
   if (error || !data) return [];
@@ -306,12 +309,12 @@ export async function getFeaturedWorkoutsForTenant(
 
   const client = await createServerSupabaseClient();
   const { data, error } = await client
-    .from("workouts")
-    .select("*, tenant_workout_preferences!inner(display_order, is_recommended), workout_steps(count)")
-    .eq("tenant_workout_preferences.tenant_id", tenantId)
-    .eq("tenant_workout_preferences.is_recommended", true)
+    .from("workout_templates")
+    .select("*, workout_template_items(count)")
+    .eq("gym_id", tenantId)
+    .eq("is_featured", true)
     .eq("is_published", true)
-    .order("display_order", { referencedTable: "tenant_workout_preferences" })
+    .order("created_at", { ascending: false })
     .limit(count);
 
   if (error || !data) return [];

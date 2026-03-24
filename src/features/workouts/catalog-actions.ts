@@ -24,8 +24,8 @@ export async function updateCatalogPreference(
   workoutId: string,
   patch: {
     is_quick_start?: boolean;
-    is_recommended?: boolean;
-    display_order?: number;
+    is_featured?: boolean; // V2 uses is_featured instead of is_recommended
+    is_recommended?: boolean; // Legacy support
   }
 ): Promise<ActionResult> {
   const ctx = await getAdminTenant();
@@ -33,22 +33,28 @@ export async function updateCatalogPreference(
 
   const { client, tenantId } = ctx;
 
-  // Verify the workout belongs to this tenant before updating preferences
+  // Map legacy is_recommended to is_featured for V2
+  const updatedPatch: any = { ...patch };
+  if (patch.is_recommended !== undefined && patch.is_featured === undefined) {
+    updatedPatch.is_featured = patch.is_recommended;
+    delete updatedPatch.is_recommended;
+  }
+
+  // Verify the workout belongs to this tenant before updating
   const { data: owned } = await client
-    .from("workouts")
+    .from("workout_templates")
     .select("id")
     .eq("id", workoutId)
-    .eq("tenant_id", tenantId)
+    .eq("gym_id", tenantId)
     .maybeSingle();
 
   if (!owned) return { error: "Workout not found or access denied." };
 
   const { error } = await client
-    .from("tenant_workout_preferences")
-    .upsert(
-      { tenant_id: tenantId, workout_id: workoutId, ...patch },
-      { onConflict: "tenant_id,workout_id" }
-    );
+    .from("workout_templates")
+    .update(updatedPatch)
+    .eq("id", workoutId)
+    .eq("gym_id", tenantId);
 
   if (error) return { error: error.message };
 

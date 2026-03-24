@@ -88,9 +88,9 @@ export async function createWorkout(input: WorkoutInput): Promise<ActionResult> 
   const slug = `${baseSlug}-${Date.now().toString(36)}`;
 
   const { data: workout, error: wErr } = await client
-    .from("workouts")
+    .from("workout_templates")
     .insert({
-      tenant_id: tenantId,
+      gym_id: tenantId,
       title: input.title,
       slug,
       description: input.description || null,
@@ -98,7 +98,7 @@ export async function createWorkout(input: WorkoutInput): Promise<ActionResult> 
       difficulty: input.difficulty,
       estimated_duration_minutes: input.estimatedDurationMinutes,
       is_published: input.isPublished,
-      source_type: "tenant",
+      source_type: "gym",
       is_featured: false,
       is_quick_start: false,
     })
@@ -110,7 +110,7 @@ export async function createWorkout(input: WorkoutInput): Promise<ActionResult> 
   // Insert steps
   if (input.steps.length > 0) {
     const stepRows = input.steps.map((s, i) => ({
-      workout_id: workout.id,
+      workout_template_id: workout.id,
       step_order: i + 1,
       title: s.title,
       instruction_text: s.description || null,
@@ -119,15 +119,11 @@ export async function createWorkout(input: WorkoutInput): Promise<ActionResult> 
       exercise_id: s.exerciseId || null,
     }));
 
-    const { error: sErr } = await client.from("workout_steps").insert(stepRows);
+    const { error: sErr } = await client.from("workout_template_items").insert(stepRows);
     if (sErr) return { error: sErr.message };
   }
 
-  // Add to tenant workout preferences
-  await client.from("tenant_workout_preferences").upsert(
-    { tenant_id: tenantId, workout_id: workout.id, is_recommended: false, is_quick_start: false },
-    { onConflict: "tenant_id,workout_id" }
-  );
+  // Notes: tenant_workout_preferences was removed in favor of direct columns in V2
 
   revalidatePath("/gym-admin/workouts");
   revalidatePath(`/g`);
@@ -149,7 +145,7 @@ export async function updateWorkout(
   const { client, tenantId } = ctx;
 
   const { error: wErr } = await client
-    .from("workouts")
+    .from("workout_templates")
     .update({
       title: input.title,
       description: input.description || null,
@@ -159,21 +155,21 @@ export async function updateWorkout(
       is_published: input.isPublished,
     })
     .eq("id", workoutId)
-    .eq("tenant_id", tenantId); // enforce ownership
+    .eq("gym_id", tenantId); // enforce ownership
 
   if (wErr) return { error: wErr.message };
 
   // Replace all steps — delete old ones first, then insert new ones
   const { error: deleteErr } = await client
-    .from("workout_steps")
+    .from("workout_template_items")
     .delete()
-    .eq("workout_id", workoutId);
+    .eq("workout_template_id", workoutId);
 
   if (deleteErr) return { error: deleteErr.message };
 
   if (input.steps.length > 0) {
     const stepRows = input.steps.map((s, i) => ({
-      workout_id: workoutId,
+      workout_template_id: workoutId,
       step_order: i + 1,
       title: s.title,
       instruction_text: s.description || null,
@@ -182,7 +178,7 @@ export async function updateWorkout(
       exercise_id: s.exerciseId || null,
     }));
 
-    const { error: sErr } = await client.from("workout_steps").insert(stepRows);
+    const { error: sErr } = await client.from("workout_template_items").insert(stepRows);
     if (sErr) return { error: sErr.message };
   }
 
@@ -199,17 +195,14 @@ export async function deleteWorkout(workoutId: string): Promise<ActionResult> {
 
   const { client, tenantId } = ctx;
 
-  // Delete steps and preferences first (FK constraints)
-  await Promise.all([
-    client.from("workout_steps").delete().eq("workout_id", workoutId),
-    client.from("tenant_workout_preferences").delete().eq("workout_id", workoutId),
-  ]);
+  // Cascade delete is handled by DB in V2, but we clean up template items just in case
+  await client.from("workout_template_items").delete().eq("workout_template_id", workoutId);
 
   const { error } = await client
-    .from("workouts")
+    .from("workout_templates")
     .delete()
     .eq("id", workoutId)
-    .eq("tenant_id", tenantId);
+    .eq("gym_id", tenantId);
 
   if (error) return { error: error.message };
 
@@ -229,10 +222,10 @@ export async function toggleWorkoutPublished(
   const { client, tenantId } = ctx;
 
   const { error } = await client
-    .from("workouts")
+    .from("workout_templates")
     .update({ is_published: published })
     .eq("id", workoutId)
-    .eq("tenant_id", tenantId);
+    .eq("gym_id", tenantId);
 
   if (error) return { error: error.message };
 
