@@ -30,15 +30,15 @@ export default async function EditWorkoutPage({ params }: Props) {
   }
 
   const { data: workout } = await client
-    .from("workouts")
-    .select("*, workout_steps(id, step_order, title, instruction_text, duration_seconds, rest_seconds, exercise_id)")
+    .from("workout_templates")
+    .select("*, workout_template_items(id, step_order, title, instruction_text, duration_seconds, rest_seconds, exercise_id)")
     .eq("id", workoutId)
-    .eq("tenant_id", profile.tenant_id)
+    .eq("gym_id", profile.tenant_id)
     .maybeSingle();
 
   if (!workout) notFound();
 
-  const sortedSteps = (workout.workout_steps ?? [])
+  const sortedSteps = (workout.workout_template_items ?? [])
     .sort((a: { step_order: number }, b: { step_order: number }) => a.step_order - b.step_order)
     .map((s: {
       title: string;
@@ -57,7 +57,10 @@ export default async function EditWorkoutPage({ params }: Props) {
   const initialData: Partial<WorkoutInput> = {
     title: workout.title,
     category: workout.category,
-    difficulty: workout.difficulty,
+    difficulty:
+      workout.difficulty === "expert"
+        ? "advanced"
+        : (workout.difficulty as any),
     estimatedDurationMinutes: workout.estimated_duration_minutes,
     description: workout.description ?? "",
     isPublished: workout.is_published,

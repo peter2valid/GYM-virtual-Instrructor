@@ -14,22 +14,14 @@ export function CatalogControls({
   workoutId,
   isQuickStart,
   isRecommended,
-  displayOrder,
-}: Props) {
+}: Pick<Props, "workoutId" | "isQuickStart" | "isRecommended">) {
   const [quickStart, setQuickStart] = useState(isQuickStart);
   const [recommended, setRecommended] = useState(isRecommended);
-  const [order, setOrder] = useState(displayOrder);
   const [isPending, startTransition] = useTransition();
 
   async function toggle(field: "is_quick_start" | "is_recommended", value: boolean) {
     startTransition(async () => {
       await updateCatalogPreference(workoutId, { [field]: value });
-    });
-  }
-
-  async function updateOrder(value: number) {
-    startTransition(async () => {
-      await updateCatalogPreference(workoutId, { display_order: value });
     });
   }
 
@@ -70,18 +62,6 @@ export function CatalogControls({
       >
         ★ Featured
       </button>
-
-      {/* Display order */}
-      <input
-        type="number"
-        min={0}
-        max={999}
-        value={order}
-        onChange={(e) => setOrder(Number(e.target.value))}
-        onBlur={() => updateOrder(order)}
-        title="Display order (lower = first)"
-        className="h-6 w-12 rounded border border-border bg-transparent px-1.5 text-center text-xs text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-      />
     </div>
   );
 }

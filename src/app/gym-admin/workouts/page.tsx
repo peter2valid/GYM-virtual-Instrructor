@@ -32,26 +32,20 @@ export default async function GymAdminWorkoutsPage() {
 
   const gymSlug = tenant?.slug ?? "";
 
-  // Fetch workouts with their catalog preferences
+  // Fetch workouts from workout_templates
   const { data: workouts } = await client
-    .from("workouts")
-    .select(`
-      id, title, category, difficulty, is_published, estimated_duration_minutes, created_at,
-      tenant_workout_preferences(is_quick_start, is_recommended, display_order)
-    `)
-    .eq("tenant_id", profile.tenant_id)
+    .from("workout_templates")
+    .select(
+      "id, title, category, difficulty, is_published, estimated_duration_minutes, created_at, is_featured, is_quick_start"
+    )
+    .eq("gym_id", profile.tenant_id)
     .order("created_at", { ascending: false });
 
-  const rows = (workouts ?? []).map((w) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pref = (w.tenant_workout_preferences as any)?.[0] ?? {};
-    return {
-      ...w,
-      isQuickStart: pref.is_quick_start ?? false,
-      isRecommended: pref.is_recommended ?? false,
-      displayOrder: pref.display_order ?? 0,
-    };
-  });
+  const rows = (workouts ?? []).map((w) => ({
+    ...w,
+    isQuickStart: w.is_quick_start ?? false,
+    isRecommended: w.is_featured ?? false,
+  }));
 
   const DIFFICULTY_LABEL: Record<string, string> = {
     beginner: "Beginner",
@@ -80,8 +74,7 @@ export default async function GymAdminWorkoutsPage() {
       {rows.length > 0 && (
         <p className="text-xs text-muted-foreground">
           <span className="font-medium">⚡ Quick</span> — appears in the &quot;Start now&quot; section.{" "}
-          <span className="font-medium">★ Featured</span> — appears in the &quot;Featured&quot; section.{" "}
-          The number is display order (lower = first).
+          <span className="font-medium">★ Featured</span> — appears in the &quot;Featured&quot; section.
         </p>
       )}
 
@@ -135,7 +128,6 @@ export default async function GymAdminWorkoutsPage() {
                   workoutId={w.id}
                   isQuickStart={w.isQuickStart}
                   isRecommended={w.isRecommended}
-                  displayOrder={w.displayOrder}
                 />
               </div>
             ))}
