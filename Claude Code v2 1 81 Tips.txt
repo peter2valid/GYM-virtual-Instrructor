@@ -1,0 +1,526 @@
+╭─── Claude Code v2.1.81 ────────────────────────────────────────────────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting started                                          │
+│                 Welcome back peter!                │ Run /init to create a CLAUDE.md file with instructions for Claude │
+│                                                    │ ───────────────────────────────────────────────────────────────── │
+│                       ▐▛███▜▌                      │ Recent activity                                                   │
+│                      ▝▜█████▛▘                     │ No recent activity                                                │
+│                        ▘▘ ▝▝                       │                                                                   │
+│    Sonnet 4.6 · Claude Pro ·                       │                                                                   │
+│    peternjorogeirungu76@gmail.com's Organization   │                                                                   │
+│            ~/million dollar/Virtual.GYM            │                                                                   │
+╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+✻ Conversation compacted (ctrl+o for history)
+
+                              
+● Compact summary
+  ⎿  This session is being continued from a previous conversation that ran out of context. The summary below covers the earlier portion of the conversation.
+                                                          
+     Summary:                  
+     1. Primary Request and Intent:
+        The user wants to rebuild their gym SaaS platform ("Virtual GYM") from an MVP into a production-grade multi-tenant gym operating system. The conversation has covered three major phases:
+                                                                                     
+        **Phase 1 (Audit):** Complete current-state discovery of the existing system before redesigning it. The user wanted a brutally honest, section-by-section report covering DB schema, auth/roles, tenant model, attendance, workouts, billing, API routes, frontend surfaces,
+     relationships, and gap analysis against the v2 vision.
+                                            
+        **Phase 2 (V2 Vision):** The user shared a V2 architecture document and asked me to read and understand it. The document defines: 4 system layers (Platform/Gym/Operations/Intelligence), 4 surfaces (/platform, /dashboard, /checkin, /m/[gym]), 27 new tables across 6 domains, 5
+     business engines, and a 4-phase parallel migration strategy.            
+                                                                                                       
+        **Phase 3 (Exercise DB):** Before starting the v2 migration, the user wanted to properly structure the exercise database:
+        - Use `free-exercise-db` as the core exercise data source
+        - Convert the 2 static JPEGs per exercise into infinite animated GIFs
+        - Clean up unnecessary files
+        - Integrate the 114 high-quality GIFs from `/home/peter/million dollar/Virtual.GYM/gif and images/` with the exercise DB                                                                                                                                                                  
+        - User explicitly stated they "prefer the GIFs here" (the high-quality ones from gif and images folder)                                                                                                                                                                                   
+        - User requested intensive matching: "do a better matching read not just by name but also if exercises are the same, im pretty sure that out 800 db the 114 fall somewhere do an intensive search for the perfect match"                                                                  
+                                                                                                                                                                                                                                                                                                  
+     2. Key Technical Concepts:                                                                                                                                                                                                                                                                   
+        - **Next.js 16 App Router** with Server Actions and API Routes                                                                                                                                                                                                                            
+        - **Supabase** (PostgreSQL 17.6, Auth/RLS, project ID: `cblwoeoozzjagxgpmrbd`, region: eu-central-1)
+        - **Row Level Security (RLS)** with SECURITY DEFINER helper functions (`get_my_role()`, `get_my_tenant_id()`)                                                                                                                                                                             
+        - **Multi-tenancy** via `tenant_id` FK pattern (slug-based routing `/g/[gymSlug]`)                                                                                                                                                                                                        
+        - **Feature flags** stored in DB table, plan-driven (starter/track/premium)                                                                                                                                                                                                               
+        - **Paystack** billing integration (webhook + verify + initialize routes)                                                                                                                                                                                                                 
+        - **Cloudflare R2** for media storage (presigned uploads)
+        - **Python PIL/Pillow** for animated GIF generation
+        - **V2 Architecture:** 6 DB domains (Platform, Tenant, Identity/Access, Member Operations, Attendance, Workout), 5 business engines, parallel evolution migration strategy
+        - **Exercise DB:** 873 exercises, 2 JPEGs each (850×567), 7 categories, 3 levels, 12 equipment types, 17 muscles
+        - **GIF optimization:** 4-frame smooth loop at 400×267, 128 colors, ~208KB per GIF
+        - **Fuzzy matching strategies:** Token overlap F1 scoring, sequence similarity, alias/synonym dictionaries, normalized name comparison
+
+     3. Files and Code Sections:
+        - **`/home/peter/million dollar/Virtual.GYM/Version 2`** (41KB text file)
+          - Complete V2 architecture document in 4 parts: System Foundation, Database Redesign, Business Logic, Migration Strategy
+          - Defines 27 new tables: `gyms`, `gym_settings`, `branches`, `platform_admins`, `profiles` (simplified), `gym_user_roles`, `invites`, `members`, `membership_types`, `member_memberships`, `member_qr_codes`, `attendance_checkins`, `attendance_events`, `exercise_categories`,
+     `exercises` (updated), `exercise_media`, `workout_templates`, `workout_template_items`, `member_workout_assignments`, `workout_sessions` (updated), `workout_session_items`, `plans`, `gym_subscriptions`, `gym_feature_overrides`, `audit_logs`, `impersonation_sessions`
+          - 7 non-negotiable design rules: Members≠Users, one user multiple gyms, super admin platform-only, gym_id everywhere, validated attendance, workout assignment support, billing separate from gym table
+
+        - **`/home/peter/million dollar/Virtual.GYM/free-exercise-db/dist/exercises.json`** (1.1MB)
+          - All 873 exercises compiled into one JSON
+          - Updated with `gifPath` field pointing to `exercises/[id]/loop.gif` for all 873 exercises
+          - Sample entry structure:
+          ```json
+          {
+            "id": "Alternate_Hammer_Curl",
+            "name": "Alternate Hammer Curl",
+            "force": "pull",
+            "level": "beginner",
+            "mechanic": "isolation",
+            "equipment": "dumbbell",
+            "primaryMuscles": ["biceps"],
+            "secondaryMuscles": ["forearms"],
+            "instructions": [...],
+            "category": "strength",
+            "images": ["Alternate_Hammer_Curl/0.jpg", "Alternate_Hammer_Curl/1.jpg"],
+            "gifPath": "exercises/Alternate_Hammer_Curl/loop.gif"
+          }
+          ```
+
+        - **`/home/peter/million dollar/Virtual.GYM/free-exercise-db/exercises/[ExerciseId]/`**
+          - Each folder now contains: `0.jpg`, `1.jpg`, `loop.gif`
+          - GIF specs: 400×267px, 128 colors, 4-frame loop (start→blend→end→blend back), 800ms hold, 80ms transition, ~208KB average
+          - 873 GIFs generated successfully, 0 errors
+
+        - **`/tmp/generate_gifs.py`** (GIF generation script)
+          ```python
+          # Core generation logic per exercise:
+          img0 = Image.open(img0_path).convert("RGB").resize((400, 267), Image.LANCZOS)
+          img1 = Image.open(img1_path).convert("RGB").resize((400, 267), Image.LANCZOS)
+          img_mid_fwd = Image.blend(img0, img1, 0.5)
+          img_mid_bwd = Image.blend(img1, img0, 0.5)
+          frames = [img0.quantize(128), img_mid_fwd.quantize(128),
+                    img1.quantize(128), img_mid_bwd.quantize(128)]
+          durations = [800, 80, 800, 80]
+          frames[0].save(gif_out, save_all=True, append_images=frames[1:],
+                         duration=durations, loop=0, optimize=True)
+          ```
+
+        - **`/home/peter/million dollar/Virtual.GYM/gif and images/`** (excluding Icons)
+          - Structure: 7 muscle-group folders (Abs_Core, Arms, Back, Chest, Legs, Other, Shoulders) + root loose files
+          - 114 high-quality GIFs (1-2.5MB each, smooth multi-frame professional demos)
+          - 59 anatomy PNGs (muscle diagrams, "muscles worked" type)
+          - 20 JPGs (reference photos)
+          - Total: 194 files, 176MB
+
+        - **Supabase project** `cblwoeoozzjagxgpmrbd` (Virtula.Gym, eu-central-1, ACTIVE_HEALTHY)
+          - 13 public tables: `tenants`, `tenant_settings`, `feature_flags`, `profiles`, `exercises`, `exercise_media_map`, `equipment_types`, `tenant_equipment_profiles`, `workouts`, `workout_steps`, `tenant_workout_preferences`, `workout_sessions`, `attendance_logs`
+          - 7 migrations applied (all on 2026-03-22/23)
+          - 4 live tenants: iron-house (premium), lj (track), xlm (track/trialing), my-test-gym (premium/trialing)
+          - 875 exercises imported, 13 profiles (8 member, 4 gym_admin, 1 super_admin)
+
+     4. Errors and Fixes:
+        - **GIF size too large (1.4MB per GIF, ~1.2GB total):** Initial test with 12 frames at 560×373 was too big. Fixed by testing 3 options and choosing Option A: 400×267, 128 colors, 4 frames = ~208KB per GIF, ~178MB total.
+
+        - **Python numpy not available:** `import numpy as np` failed. Not needed — removed from scripts entirely, used pure PIL instead.
+
+        - **PIL quantize sort error:** `TypeError: '<' not supported between instances of 'dict' and 'dict'` in the intensive matching script. This was the last error when the conversation was interrupted. The bug is in the scoring sort: `scored.sort(reverse=True)` where tuples contain
+     `(float, dict)` — when floats are equal, Python tries to compare dicts. Fix: use `scored.sort(key=lambda x: x[0], reverse=True)`.
+
+        - **First fuzzy match only found 11/114:** Simple normalized string matching wasn't enough. User requested intensive search. Second attempt built comprehensive alias dictionary + token overlap F1 scoring + sequence similarity but hit the sort error before completing.
+
+     5. Problem Solving:
+        - **V1 audit completed:** Full 16-section brutally honest report produced covering all critical weaknesses (no member entity, profiles doing too many jobs, no membership lifecycle, attendance NULL bug, billing embedded on tenant row, super admin placeholder, etc.)
+        - **V2 document fully read and understood:** All 4 parts absorbed, 7 design rules confirmed.
+        - **Exercise DB cleanup completed:** Removed site/, Makefile, README.md, 873 redundant JSON files. Now clean 3-file structure per exercise.
+        - **873 GIFs generated successfully** in 386 seconds (2.3/sec), 0 errors.
+        - **exercises.json updated** with gifPath on all 873 entries.
+        - **ONGOING:** Intensive matching of 114 high-quality GIFs to exercise DB entries. Script was interrupted mid-execution due to a Python sort error on dict comparison.
+
+     6. All User Messages:
+        - "You are acting as a senior platform architect and backend auditor... [full audit request with 11 sections and strict rules]"
+        - "Tool loaded." (after ToolSearch)
+        - "so there has been alot of project mishandlment, youve made my saas look a school project joke but i want us that to change today can you read and understand this file /home/peter/million dollar/Virtual.GYM/Version 2"
+        - "first of all before we start i want us to deal with this /home/peter/million dollar/Virtual.GYM/free-exercise-db , i want to use the contex as my db for contex and some visuals so want is the best appproch , also i wanted to turn the 2 images of each exercise into infinite gif ,
+      so i want us to prperly structure the files and remove all uneeded thing so lets make this into a super db"
+        - "before we countine /home/peter/million dollar/Virtual.GYM/gif and images/ excluding the icon folder , i want them to work hand in hand with this db burt i pregfere tis gif here so i want you to find the best thing to do"
+        - "[Request interrupted by user for tool use]" (interrupted the first fuzzy match attempt)
+        - "do a better matching read not just by name but also if exercises are the same , im pretty sure that out 800 db the 114 fall somewhere do an intensive search for the perfect match"
+
+     7. Pending Tasks:
+        - **Fix and complete the intensive GIF-to-exercise matching script** (immediate, was in-progress when interrupted)
+        - Copy matched high-quality GIFs into their exercise folders as `demo.gif`
+        - Update `exercises.json` with `demoGifPath` field for matched exercises
+        - Handle unmatched GIFs (keep organized in standalone folder structure)
+        - Handle the 59 anatomy PNGs — match and add `anatomyPath` to exercises.json
+        - Upload all assets to Cloudflare R2
+        - Begin V2 database migration (Phase 1: foundation tables per the V2 document)
+
+     8. Current Work:
+        Writing an intensive multi-strategy matching script to match 114 high-quality GIFs from `/home/peter/million dollar/Virtual.GYM/gif and images/` (excluding Icons) to exercise entries in the free-exercise-db (873 exercises). The script was nearly complete but crashed with:
+        ```
+        TypeError: '<' not supported between instances of 'dict' and 'dict'
+        ```
+        The bug is in this line of `find_match()`:
+        ```python
+        scored.sort(reverse=True)  # BUG: tuples are (float, dict) — equal floats cause dict comparison
+        ```
+        Fix needed:
+        ```python
+        scored.sort(key=lambda x: x[0], reverse=True)  # sort by score only
+        ```
+        The matching approach uses: (1) comprehensive alias/synonym dictionary for common name differences, (2) token overlap F1 scoring with stop-word removal, (3) SequenceMatcher sequence similarity, (4) muscle-group folder context. Target: match as many of the 114 GIFs as possible to DB
+      exercise IDs so the high-quality GIFs can be stored as `demo.gif` alongside the generated `loop.gif` in each exercise folder.
+
+     9. Optional Next Step:
+        Fix the sort bug in the intensive matching script and re-run it to completion. The user's exact request was: "do a better matching read not just by name but also if exercises are the same, im pretty sure that out 800 db the 114 fall somewhere do an intensive search for the perfect
+     match"
+
+        The immediate fix is changing `scored.sort(reverse=True)` to `scored.sort(key=lambda x: x[0], reverse=True)` in the `find_match()` function, then re-running the full matching pass to produce confident matches, uncertain matches, and unmatched lists across all 114 GIFs.
+
+     If you need specific details from before compaction (like exact code snippets, error messages, or content you generated), read the full transcript at: /home/peter/.claude/projects/-home-peter-million-dollar-Virtual-GYM/7872af15-8c35-4d34-839d-294700c3dc51.jsonl
+     Continue the conversation from where it left off without asking the user any further questions. Resume directly — do not acknowledge the summary, do not recap what was happening, do not preface with "I'll continue" or similar. Pick up the last task as if the break never happened.
+  ⎿  Referenced file Version 2
+
+● Write(/tmp/intensive_match.py)
+  ⎿  Wrote 331 lines to /tmp/intensive_match.py
+        1 #!/usr/bin/env python3
+        2 """
+        3 Intensive GIF-to-exercise matcher.
+        4 Strategies: alias dict, token F1, sequence similarity, muscle-group context.
+        5 """
+        6 import os, json, re, shutil
+        7 from difflib import SequenceMatcher
+        8
+        9 GIF_ROOT   = "/home/peter/million dollar/Virtual.GYM/gif and images"
+       10 EXERCISES_JSON = "/home/peter/million dollar/Virtual.GYM/free-exercise-db/dist/exercises.json"
+       11 EXERCISE_DIR   = "/home/peter/million dollar/Virtual.GYM/free-exercise-db/exercises"
+       12
+       13 # ─── Load exercises ────────────────────────────────────────────────────────────
+       14 with open(EXERCISES_JSON) as f:
+       15     exercises = json.load(f)
+       16
+       17 # ─── Alias / synonym dictionary ────────────────────────────────────────────────
+       18 ALIASES = {
+       19     "ab": ["abdominal", "abs", "core"],
+       20     "abdominal": ["ab", "abs", "core"],
+       21     "abs": ["ab", "abdominal", "core"],
+       22     "alt": ["alternate", "alternating"],
+       23     "alternate": ["alt", "alternating"],
+       24     "alternating": ["alt", "alternate"],
+       25     "arnold": ["arnold press"],
+       26     "barbell": ["bb", "bar"],
+       27     "bb": ["barbell"],
+       28     "bench": ["press"],
+       29     "bent": ["bent-over", "bentover"],
+       30     "bent-over": ["bent", "bentover", "bent over"],
+       31     "bicep": ["biceps", "curl"],
+       32     "biceps": ["bicep", "curl"],
+       33     "bulgarian": ["rear elevated", "split squat elevated"],
+       34     "cable": ["pulley", "low cable", "high cable"],
+       35     "calf": ["calves", "calf raise"],
+       36     "calves": ["calf"],
+       37     "chest": ["pec", "pectoral"],
+       38     "chin": ["chin-up", "chinup", "pull up", "pullup"],
+       39     "chin-up": ["chin", "chinup", "pullup", "pull-up"],
+       40     "chinup": ["chin", "chin-up"],
+       41     "close grip": ["close-grip", "narrow grip", "narrow"],
+       42     "close-grip": ["close grip", "narrow"],
+       43     "concentration": ["concentration curl"],
+       44     "crossover": ["cross over", "cross-over"],
+       45     "crunch": ["crunches", "ab crunch"],
+       46     "crunches": ["crunch"],
+       47     "curl": ["curls", "bicep curl", "biceps curl"],
+       48     "curls": ["curl"],
+       49     "deadlift": ["dead lift", "dead-lift", "rdl"],
+       50     "decline": ["decline press"],
+       51     "dip": ["dips", "tricep dip", "chest dip"],
+       52     "dips": ["dip"],
+       53     "dumbbell": ["db", "dumbell", "dumbells"],
+       54     "db": ["dumbbell"],
+       55     "ez": ["ez bar", "ez-bar", "ezbar"],
+       56     "ez bar": ["ez", "ez-bar"],
+       57     "ez-bar": ["ez", "ez bar"],
+       58     "extension": ["extend"],
+       59     "external": ["external rotation"],
+       60     "flye": ["fly", "flyes", "flies"],
+       61     "flyes": ["flye", "fly", "flies"],
+       62     "fly": ["flye", "flyes", "flies"],
+       63     "front": ["frontal"],
+       64     "glute": ["glutes", "butt", "hip"],
+       65     "glutes": ["glute"],
+       66     "good morning": ["goodmorning", "good-morning"],
+       67     "hack": ["hack squat"],
+       68     "hammer": ["hammer curl"],
+       69     "hamstring": ["hamstrings", "leg curl"],
+       70     "hamstrings": ["hamstring"],
+       71     "hang": ["hanging"],
+       72     "hanging": ["hang"],
+       73     "hip": ["hip thrust", "hip hinge"],
+       74     "hyperextension": ["back extension", "hyper extension", "hyperextensions"],
+       75     "hyperextensions": ["hyperextension", "back extension"],
+       76     "incline": ["inclined"],
+       77     "internal": ["internal rotation"],
+       78     "jerk": ["push jerk", "split jerk"],
+       79     "jump": ["jumping", "jumps", "plyometric"],
+       80     "jumping": ["jump"],
+       81     "kettlebell": ["kb", "kettle bell"],
+       82     "kb": ["kettlebell"],
+       83     "kickback": ["kick back"],
+       84     "knee": ["knees"],
+       85     "lat": ["latissimus", "lats", "lateral", "lat pulldown"],
+       86     "lateral": ["side", "lat"],
+       87     "lateral raise": ["side raise", "side lateral", "side laterals"],
+       88     "leg": ["legs"],
+       89     "legs": ["leg"],
+       90     "low": ["low cable", "lower"],
+       91     "lower": ["low"],
+       92     "lunge": ["lunges"],
+       93     "lunges": ["lunge"],
+       94     "lying": ["lying down", "supine"],
+       95     "machine": ["machine press"],
+       96     "military": ["military press", "overhead press"],
+       97     "mountain climber": ["mountain climbers"],
+       98     "mountain climbers": ["mountain climber"],
+       99     "neck": ["traps", "trapezius"],
+      100     "oblique": ["obliques", "side"],
+      101     "obliques": ["oblique"],
+      102     "one arm": ["one-arm", "single arm", "unilateral"],
+      103     "one-arm": ["one arm", "single arm", "single-arm"],
+      104     "overhead": ["over head", "oh"],
+      105     "plank": ["front plank", "isometric"],
+      106     "preacher": ["preacher curl"],
+      107     "press": ["pressing"],
+      108     "pull": ["pull-up", "pullup", "chin-up"],
+      109     "pull-up": ["pullup", "chin-up", "pull up"],
+      110     "pulldown": ["pull-down", "lat pulldown"],
+      111     "pullup": ["pull-up", "pull up", "chin-up"],
+      112     "push": ["push-up", "pushup"],
+      113     "push-up": ["pushup", "push up"],
+      114     "pushup": ["push-up", "push up"],
+      115     "quad": ["quadriceps", "quads"],
+      116     "quadriceps": ["quad", "quads"],
+      117     "raise": ["raises"],
+      118     "rdl": ["romanian deadlift", "romanian"],
+      119     "rear": ["back", "posterior"],
+      120     "rear delt": ["rear deltoid", "posterior delt"],
+      121     "reverse": ["reverse curl", "reverse grip"],
+      122     "romanian": ["rdl", "romanian deadlift"],
+      123     "rope": ["cable rope"],
+      124     "row": ["rows", "rowing"],
+      125     "rows": ["row"],
+      126     "russian twist": ["russian"],
+      127     "seated": ["sitting"],
+      128     "shoulder": ["deltoid", "delt", "delts", "shoulders"],
+      129     "shoulders": ["shoulder", "deltoid", "delt"],
+      130     "shrug": ["shrugs", "traps"],
+      131     "shrugs": ["shrug"],
+      132     "side": ["lateral", "side raise"],
+      133     "single": ["one", "unilateral"],
+      134     "single arm": ["one arm", "one-arm", "single-arm"],
+      135     "single leg": ["one leg", "one-leg", "unilateral"],
+      136     "sit up": ["situp", "sit-up", "crunch"],
+      137     "sit-up": ["sit up", "situp"],
+      138     "situp": ["sit-up", "sit up"],
+      139     "skull crusher": ["skullcrusher", "skull-crusher", "lying triceps extension"],
+      140     "skullcrusher": ["skull crusher", "skull-crusher"],
+      141     "snatch": ["power snatch"],
+      142     "squat": ["squats"],
+      143     "squats": ["squat"],
+      144     "standing": ["stand"],
+      145     "step": ["step up", "step-up"],
+      146     "step up": ["step-up", "steps"],
+      147     "straight": ["straight arm", "straight-arm"],
+      148     "stretch": ["stretching"],
+      149     "sumo": ["sumo squat", "sumo deadlift"],
+      150     "superman": ["back extension"],
+      151     "swing": ["swings", "kettlebell swing"],
+      152     "t-bar": ["t bar", "tbar", "t bar row"],
+      153     "thruster": ["thrusters"],
+      154     "tricep": ["triceps", "tricep extension"],
+      155     "triceps": ["tricep"],
+      156     "turkish": ["turkish get up", "get-up"],
+      157     "twist": ["twists", "rotation"],
+      158     "upright": ["upright row"],
+      159     "walking": ["walk"],
+      160     "wide grip": ["wide-grip", "wide"],
+      161     "wrist": ["wrist curl"],
+      162     "z bar": ["ez bar", "ez-bar", "zbar"],
+      163 }
+      164
+      165 STOPWORDS = {"a","an","the","with","on","in","to","of","for","and","or","at","by","from","into","onto"}
+      166
+      167 def normalize(name):
+      168     """Lowercase, strip punctuation, remove stopwords."""
+      169     name = name.lower()
+      170     name = re.sub(r"[_\-/\\]", " ", name)
+      171     name = re.sub(r"[^a-z0-9 ]", "", name)
+      172     name = re.sub(r"\s+", " ", name).strip()
+      173     return name
+      174
+      175 def tokenize(name):
+      176     tokens = normalize(name).split()
+      177     return [t for t in tokens if t not in STOPWORDS]
+      178
+      179 def expand_aliases(tokens):
+      180     expanded = set(tokens)
+      181     for tok in tokens:
+      182         if tok in ALIASES:
+      183             expanded.update(ALIASES[tok])
+      184     # Also try multi-word phrases
+      185     text = " ".join(tokens)
+      186     for phrase, subs in ALIASES.items():
+      187         if " " in phrase and phrase in text:
+      188             for s in subs:
+      189                 expanded.update(s.split())
+      190     return expanded
+      191
+      192 def token_f1(gif_tokens, ex_tokens):
+      193     """F1 score between two token sets (with alias expansion)."""
+      194     set_g = expand_aliases(gif_tokens)
+      195     set_e = expand_aliases(ex_tokens)
+      196     if not set_g or not set_e:
+      197         return 0.0
+      198     inter = set_g & set_e
+      199     if not inter:
+      200         return 0.0
+      201     prec = len(inter) / len(set_g)
+      202     rec  = len(inter) / len(set_e)
+      203     return 2 * prec * rec / (prec + rec)
+      204
+      205 def seq_sim(a, b):
+      206     return SequenceMatcher(None, normalize(a), normalize(b)).ratio()
+      207
+      208 # Muscle group context — folder name → primary muscles
+      209 FOLDER_MUSCLES = {
+      210     "Abs_Core":  ["abdominals", "core"],
+      211     "Arms":      ["biceps", "triceps", "forearms", "brachialis"],
+      212     "Back":      ["lats", "middle back", "lower back", "traps"],
+      213     "Chest":     ["chest"],
+      214     "Legs":      ["quadriceps", "hamstrings", "calves", "glutes", "adductors", "abductors"],
+      215     "Other":     [],
+      216     "Shoulders": ["shoulders", "traps", "deltoids"],
+      217 }
+      218
+      219 def muscle_bonus(folder, exercise):
+      220     """Small bonus (0-0.15) if exercise primary/secondary muscles match folder context."""
+      221     expected = FOLDER_MUSCLES.get(folder, [])
+      222     if not expected:
+      223         return 0.0
+      224     all_muscles = [m.lower() for m in exercise.get("primaryMuscles", []) + exercise.get("secondaryMuscles", [])]
+      225     for m in all_muscles:
+      226         for e in expected:
+      227             if e in m or m in e:
+      228                 return 0.15
+      229     return 0.0
+      230
+      231 def find_match(gif_name, folder, exercises, threshold=0.30):
+      232     """Return (best_score, best_exercise, all_scored_top5)."""
+      233     gif_tokens = tokenize(gif_name)
+      234     scored = []
+      235     for ex in exercises:
+      236         ex_tokens = tokenize(ex["name"])
+      237         f1   = token_f1(gif_tokens, ex_tokens)
+      238         seq  = seq_sim(gif_name, ex["name"])
+      239         # Also compare against id
+      240         seq_id = seq_sim(gif_name, ex["id"])
+      241         base = 0.6 * f1 + 0.3 * max(seq, seq_id) + 0.1 * muscle_bonus(folder, ex)
+      242         scored.append((base, ex))
+      243
+      244     # FIX: sort by score only (avoids dict comparison when scores are equal)
+      245     scored.sort(key=lambda x: x[0], reverse=True)
+      246     top5 = [(s, e["id"], e["name"]) for s, e in scored[:5]]
+      247     best_score, best_ex = scored[0]
+      248     if best_score >= threshold:
+      249         return best_score, best_ex, top5
+      250     return best_score, None, top5
+      251
+      252 # ─── Collect GIFs ──────────────────────────────────────────────────────────────
+      253 gif_files = []
+      254 EXCLUDE = {"Icons", "icons"}
+      255 for root, dirs, files in os.walk(GIF_ROOT):
+      256     # Skip Icons folder
+      257     dirs[:] = [d for d in dirs if d not in EXCLUDE]
+      258     folder_name = os.path.basename(root)
+      259     for fname in files:
+      260         if fname.lower().endswith(".gif"):
+      261             rel = os.path.relpath(os.path.join(root, fname), GIF_ROOT)
+      262             gif_files.append({
+      263                 "path": os.path.join(root, fname),
+      264                 "fname": fname,
+      265                 "stem": os.path.splitext(fname)[0],
+      266                 "folder": folder_name if folder_name != os.path.basename(GIF_ROOT) else "Other",
+      267                 "rel": rel,
+      268             })
+      269
+      270 gif_files.sort(key=lambda x: x["rel"])
+      271 print(f"Found {len(gif_files)} GIF files\n")
+      272
+      273 # ─── Run matching ──────────────────────────────────────────────────────────────
+      274 CONFIDENT   = 0.55   # copy as demo.gif
+      275 UNCERTAIN   = 0.35   # flag for manual review
+      276
+      277 results = {
+      278     "confident": [],
+      279     "uncertain": [],
+      280     "unmatched": [],
+      281 }
+      282
+      283 for g in gif_files:
+      284     score, best, top5 = find_match(g["stem"], g["folder"], exercises)
+      285     entry = {
+      286         "gif": g["rel"],
+      287         "stem": g["stem"],
+      288         "folder": g["folder"],
+      289         "score": round(score, 3),
+      290         "match_id": best["id"] if best else None,
+      291         "match_name": best["name"] if best else None,
+      292         "top5": top5,
+      293     }
+      294     if score >= CONFIDENT and best:
+      295         results["confident"].append(entry)
+      296     elif score >= UNCERTAIN and best:
+      297         results["uncertain"].append(entry)
+      298     else:
+      299         results["unmatched"].append(entry)
+      300
+      301 # ─── Report ────────────────────────────────────────────────────────────────────
+      302 print("=" * 70)
+      303 print(f"CONFIDENT MATCHES  (score >= {CONFIDENT}): {len(results['confident'])}")
+      304 print("=" * 70)
+      305 for r in results["confident"]:
+      306     print(f"  [{r['score']:.3f}] {r['stem']}")
+      307     print(f"         → {r['match_id']} ({r['match_name']})")
+      308
+      309 print()
+      310 print("=" * 70)
+      311 print(f"UNCERTAIN MATCHES  ({UNCERTAIN} <= score < {CONFIDENT}): {len(results['uncertain'])}")
+      312 print("=" * 70)
+      313 for r in results["uncertain"]:
+      314     print(f"  [{r['score']:.3f}] {r['stem']}")
+      315     print(f"         → {r['match_id']} ({r['match_name']})")
+      316     print(f"         top5: {[(round(s,3), n) for s,i,n in r['top5']]}")
+      317
+      318 print()
+      319 print("=" * 70)
+      320 print(f"UNMATCHED  (score < {UNCERTAIN}): {len(results['unmatched'])}")
+      321 print("=" * 70)
+      322 for r in results["unmatched"]:
+      323     print(f"  [{r['score']:.3f}] {r['stem']} ({r['folder']})")
+      324     print(f"         top5: {[(round(s,3), n) for s,i,n in r['top5']]}")
+      325
+      326 print(f"\nSummary: {len(results['confident'])} confident | {len(results['uncertain'])} uncertain | {len(results['unmatched'])} unmatched out of {len(gif_files)} GIFs")
+      327
+      328 # Save results to JSON for next step
+      329 with open("/tmp/match_results.json", "w") as f:
+      330     json.dump(results, f, indent=2)
+      331 print("\nResults saved to /tmp/match_results.json")
+  ⎿  1 PostToolUse hook ran
+
+                                                                                                                                                                                                                                                                      05:03 PM <synthetic>
+  ⎿  You've hit your limit · resets 9pm (Africa/Nairobi)
+                          
+✻ Baked for 4m 37s
+                  
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Showing detailed transcript · ctrl+o to toggle · ctrl+e to collapse                                                                                                                                                                                                                             
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+                                                                                                                                                                                                                                                                                                  
+
+

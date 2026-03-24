@@ -1,0 +1,2627 @@
+Part 1 — Vision and system model
+product vision
+system layers
+user types
+surfaces
+business model
+module boundaries
+Part 2 — Database redesign
+core entities
+table-by-table v2 schema
+relationships
+platform vs tenant separation
+member vs profile separation
+Part 3 — Business engines
+attendance engine
+membership engine
+workout engine
+analytics/retention engine
+Part 4 — Migration strategy
+what stays
+what changes
+migration order
+risk controls
+
+That is the serious path.
+
+___________________________________________________________________________________________________________________________________________________________________
+This is V2 Architecture Document — Part 1: System Foundation
+
+This is where we reset how the system is mentally structured.
+If this part is wrong, everything after will collapse.
+
+🧠 1. PRODUCT REDEFINITION (IMPORTANT SHIFT)
+
+You are NOT building:
+
+a workout app ❌
+an attendance tracker ❌
+
+You are building:
+
+A multi-tenant fitness operating system that controls member behavior, gym operations, and revenue intelligence
+
+This matters because it defines:
+
+what entities exist
+what data matters
+how flows are designed
+how pricing works
+🧱 2. SYSTEM LAYERS (THE REAL ARCHITECTURE)
+
+We separate the system into 4 hard layers.
+
+🔴 LAYER 1 — PLATFORM (YOU)
+
+This is your business.
+
+Controls:
+
+gyms (tenants)
+plans
+subscriptions
+feature access
+global analytics
+support / impersonation
+
+👉 This layer must NEVER depend on gym logic
+
+🟢 LAYER 2 — TENANT (GYM)
+
+Each gym is its own world.
+
+Controls:
+
+members
+staff
+branches (future)
+memberships
+workouts
+attendance
+settings
+branding
+
+👉 Everything here is scoped by gym_id
+
+🔵 LAYER 3 — OPERATIONS
+
+This is what runs daily gym activity.
+
+Includes:
+
+attendance engine
+membership lifecycle
+workout assignment
+session tracking
+
+👉 This is where real value is created
+
+🟣 LAYER 4 — INTELLIGENCE (FUTURE POWER)
+
+This layer makes your product premium.
+
+Includes:
+
+retention tracking
+churn prediction
+engagement scoring
+alerts
+campaigns
+
+👉 Not needed for MVP, but must be planned now
+
+👥 3. ACTORS (WHO EXISTS IN THE SYSTEM)
+
+We define this clearly to fix your current confusion.
+
+1. Platform Admin (YOU)
+manages all gyms
+controls pricing and features
+sees everything
+2. Gym Owner / Admin
+manages one gym
+controls members and staff
+sees gym analytics
+3. Staff (Front Desk / Trainer)
+
+Split roles (VERY IMPORTANT):
+
+Front Desk
+check-in members
+validate membership
+minimal UI
+Trainer
+assign workouts
+monitor member progress
+4. Member (CUSTOMER)
+attends gym
+follows workouts
+tracks progress
+⚠️ CRITICAL FIX
+
+Right now your system uses:
+👉 profiles for everything
+
+That is wrong.
+
+We must split:
+
+identity → profiles
+gym role → gym_user_roles
+customer → members
+
+This is non-negotiable.
+
+🧭 4. SYSTEM SURFACES (HOW USERS INTERACT)
+
+Your system is NOT one app.
+
+It is 4 surfaces:
+
+🟣 1. PLATFORM PANEL
+
+/platform
+
+For YOU:
+
+gyms
+billing
+plans
+analytics
+support
+🟢 2. GYM DASHBOARD
+
+/dashboard
+
+For gym admin:
+
+members
+attendance
+workouts
+analytics
+settings
+🟡 3. FRONT DESK MODE
+
+/checkin
+
+For staff:
+
+QR scan
+member lookup
+instant validation
+
+👉 Must be ultra fast
+
+🔵 4. MEMBER APP (PWA)
+
+/m/[gym]
+
+For members:
+
+workouts
+progress
+attendance
+streaks
+
+👉 Mobile-first design
+
+🔁 5. CORE SYSTEM FLOWS (THIS IS WHAT YOU WERE MISSING)
+
+Now we define behavior.
+
+🔹 FLOW 1 — MEMBER LIFECYCLE
+Join → Membership → Attend → Workout → Progress → Renew → (or churn)
+
+Your current system:
+❌ does not properly support this
+
+🔹 FLOW 2 — ATTENDANCE FLOW
+Scan QR → Identify Member → Validate Membership → Check-in → Log → Analytics
+
+Current issues:
+
+no membership validation
+tied to profiles
+weak logging
+🔹 FLOW 3 — WORKOUT FLOW
+Create Plan → Assign to Member → Start Session → Complete Exercises → Track Progress
+
+Current issues:
+
+no assignment model
+sessions lack detail
+🔹 FLOW 4 — GYM REVENUE FLOW
+Lead → Trial → Membership → Attendance → Retention → Renewal
+
+Current system:
+❌ missing entirely
+
+🧠 6. CORE BUSINESS ENTITIES (THIS FIXES YOUR DB)
+
+This is the clean model:
+
+PLATFORM
+gyms
+plans
+subscriptions
+feature_overrides
+IDENTITY
+profiles (auth users)
+gym_user_roles
+GYM OPERATIONS
+members
+membership_types
+member_memberships
+attendance_checkins
+WORKOUT
+exercises
+workout_templates
+workout_plans
+member_assignments
+workout_sessions
+INTELLIGENCE (future)
+member_states
+metrics
+campaigns
+notifications
+🚨 7. BIGGEST DESIGN RULES (DO NOT BREAK THESE)
+
+These are the rules your v2 must obey:
+
+RULE 1 — MEMBERS ≠ USERS
+
+A member is a business entity, not just a login.
+
+RULE 2 — ONE USER CAN BELONG TO MULTIPLE GYMS
+
+Your current system breaks this.
+
+RULE 3 — SUPER ADMIN IS PLATFORM ONLY
+
+Never mix with gym roles.
+
+RULE 4 — ALL GYM DATA MUST BE SCOPED BY gym_id
+
+No exceptions.
+
+RULE 5 — ATTENDANCE MUST BE VALIDATED
+
+No blind check-ins.
+
+RULE 6 — WORKOUTS MUST SUPPORT ASSIGNMENT
+
+Templates ≠ programs
+
+RULE 7 — BILLING MUST BE SEPARATE FROM GYM TABLE
+
+Never embed everything in tenants
+
+🧠 8. WHY YOUR CURRENT SYSTEM BREAKS
+
+From the audit, your system assumes:
+
+“A user joins a gym, and that becomes their identity”
+
+That model fails because:
+
+no multi-gym support
+no clean staff roles
+no proper member lifecycle
+no separation of concerns
+no scalable billing
+no advanced features later
+🧭 9. V2 MENTAL MODEL (THIS IS YOUR NEW FOUNDATION)
+
+Your system should think like this:
+
+Platform owns gyms
+Gyms own members
+Members have memberships
+Memberships control access
+Attendance records behavior
+Workouts drive engagement
+Intelligence drives retention
+
+🧠 FINAL VERDICT FOR PART 1
+
+You now have:
+
+correct system layers
+correct actors
+correct flows
+correct mental model
+clear separation of concerns
+
+This is the foundation of everything
+
+
+___________________________________________________________________________________________________________________________________________________________________
+PART 2
+
+V2 Architecture Document — Part 2: Database Redesign
+
+Goal: turn the current DB from a decent MVP schema into a real multi-tenant gym operating platform schema.
+
+This part will cover:
+
+what tables stay
+what tables split
+what tables are added
+how everything relates
+what the new source of truth becomes
+1. Core redesign principle
+
+Your current DB is too centered on:
+
+profiles
+tenants
+workouts
+attendance_logs
+
+That worked for v1.
+
+For v2, the DB must be centered on:
+
+platform
+gyms
+users
+members
+memberships
+attendance
+workout assignment
+
+That is the real operating model.
+
+2. The new database layers
+
+We will structure the schema into 6 logical domains.
+
+A. Platform domain
+
+Your business layer.
+
+Tables:
+
+platform_admins
+plans
+gym_subscriptions
+gym_feature_overrides
+B. Tenant domain
+
+Each gym as a business entity.
+
+Tables:
+
+gyms
+branches
+gym_settings
+C. Identity and access domain
+
+Who can sign in and what role they have.
+
+Tables:
+
+profiles
+gym_user_roles
+invites
+D. Member operations domain
+
+Actual customer/member records.
+
+Tables:
+
+members
+membership_types
+member_memberships
+member_qr_codes
+E. Attendance domain
+
+Daily presence and validation.
+
+Tables:
+
+attendance_checkins
+attendance_events
+F. Workout domain
+
+Content, assignment, execution.
+
+Tables:
+
+exercise_categories
+exercises
+exercise_media
+workout_templates
+workout_template_items
+member_workout_assignments
+workout_sessions
+workout_session_items
+3. Table-by-table v2 design
+3.1 gyms
+
+This is the new version of tenants.
+
+Purpose:
+The gym/business entity.
+
+Key fields:
+
+id
+name
+slug
+logo_url
+primary_color
+secondary_color
+status (trial, active, suspended, expired)
+timezone
+country
+city
+phone
+email
+created_at
+updated_at
+
+Important:
+
+move billing fields out
+move plan fields out
+keep this table focused on gym identity
+
+So:
+
+keep tenants concept
+rename mentally and eventually physically to gyms
+3.2 gym_settings
+
+This evolves from tenant_settings.
+
+Purpose:
+Per-gym behavior and branding settings.
+
+Key fields:
+
+id
+gym_id
+require_member_login
+show_quick_start
+default_recommendation_mode
+allow_guest_preview
+kiosk_mode_enabled
+attendance_qr_enabled
+created_at
+updated_at
+
+This stays 1:1 with gym.
+
+3.3 branches
+
+New table.
+
+Purpose:
+Support multi-branch gyms from the start, even if only one branch is used first.
+
+Fields:
+
+id
+gym_id
+name
+slug
+address
+phone
+is_main
+is_active
+created_at
+updated_at
+
+Why this matters:
+
+attendance is often branch-based
+staff can be branch-limited
+analytics gets stronger later
+3.4 platform_admins
+
+New table.
+
+Purpose:
+Separate your platform authority from gym users.
+
+Fields:
+
+id
+profile_id
+role (super_admin, platform_support, platform_ops)
+is_active
+created_at
+
+Important:
+This solves the current bad mixing of super_admin inside profiles.role.
+
+3.5 profiles
+
+This table stays, but gets simplified.
+
+Purpose:
+Global identity profile linked to auth user.
+
+Fields:
+
+id
+full_name
+email
+phone
+avatar_url
+date_of_birth nullable
+created_at
+updated_at
+
+What gets removed from profile responsibility:
+
+no direct gym ownership
+no tenant_id
+no primary role authority
+
+This becomes just:
+who the person is
+
+3.6 gym_user_roles
+
+New and critical.
+
+Purpose:
+Map a profile into a role inside a specific gym.
+
+Fields:
+
+id
+gym_id
+profile_id
+branch_id nullable
+role (gym_owner, gym_admin, front_desk, trainer)
+is_active
+created_at
+updated_at
+
+Why this matters:
+
+one user can belong to multiple gyms
+one user can have different roles in different gyms
+platform roles stay separate
+
+This is one of the most important fixes in v2.
+
+3.7 invites
+
+New table.
+
+Purpose:
+Invite staff into a gym cleanly.
+
+Fields:
+
+id
+gym_id
+email
+role
+branch_id nullable
+token_hash
+invited_by_profile_id
+accepted_at nullable
+expires_at
+created_at
+
+This helps staff onboarding without hacks.
+
+4. The real member system
+
+This is one of the biggest missing pieces in v1.
+
+4.1 members
+
+New and essential.
+
+Purpose:
+Represents the customer/member as a business entity.
+
+Fields:
+
+id
+gym_id
+branch_id nullable
+profile_id nullable
+member_code
+first_name
+last_name
+full_name
+phone
+email
+gender nullable
+photo_url nullable
+joined_at
+status (lead, trial, active, inactive, expired, blocked)
+notes nullable
+created_at
+updated_at
+
+Key idea:
+A member can exist without login.
+
+That is huge.
+
+Because many gyms need:
+
+walk-in members
+manually created members
+members without app access yet
+
+This is why members cannot just be profiles.
+
+4.2 membership_types
+
+New.
+
+Purpose:
+Define commercial packages sold by the gym.
+
+Fields:
+
+id
+gym_id
+name
+description
+duration_days
+price_kes
+attendance_limit nullable
+includes_workouts
+includes_classes
+is_active
+created_at
+updated_at
+
+Examples:
+
+Monthly pass
+Weekly pass
+Student plan
+Premium coaching
+4.3 member_memberships
+
+New and critical.
+
+Purpose:
+Track the actual active membership for a member.
+
+Fields:
+
+id
+gym_id
+member_id
+membership_type_id
+start_date
+end_date
+status (active, expired, paused, cancelled)
+payment_status (paid, partial, unpaid, waived)
+auto_renew
+created_at
+updated_at
+
+Why this matters:
+This is the business engine behind attendance validation.
+
+No membership system = no serious gym platform.
+
+4.4 member_qr_codes
+
+New.
+
+Purpose:
+Give each member a secure check-in identity.
+
+Fields:
+
+id
+gym_id
+member_id
+qr_token_hash
+is_active
+expires_at nullable
+created_at
+updated_at
+
+Do not rely on plain visible IDs alone.
+Use signed or hashed tokens.
+
+5. Attendance redesign
+
+Your current attendance_logs is too weak.
+
+We replace it conceptually with a proper attendance engine.
+
+5.1 attendance_checkins
+
+New main attendance table.
+
+Purpose:
+Stores validated check-ins/checkouts.
+
+Fields:
+
+id
+gym_id
+branch_id
+member_id
+member_membership_id nullable
+checkin_method (qr, manual, staff, kiosk)
+checkin_at
+checkout_at nullable
+checked_in_by_profile_id nullable
+status (entered, denied, completed)
+denial_reason nullable
+created_at
+
+Why better:
+
+ties attendance to actual member entity
+supports branch
+supports front desk attribution
+supports denial logs
+supports membership validation snapshot
+5.2 attendance_events
+
+Optional but powerful.
+
+Purpose:
+Track attendance-related events for audit/debug.
+
+Fields:
+
+id
+gym_id
+member_id
+event_type (attempt, success, denied, checkout)
+metadata jsonb
+created_at
+
+Use this when you want:
+
+better support logs
+richer analytics
+device-level history
+6. Workout redesign
+
+Your current workout model is halfway there.
+We need to split content from assignment and execution.
+
+6.1 exercise_categories
+
+New optional normalization.
+
+Fields:
+
+id
+name
+slug
+created_at
+
+This cleans up free-text category mess later.
+
+6.2 exercises
+
+Keep, but improve.
+
+Purpose:
+Global or gym-specific exercise library.
+
+Fields:
+
+id
+gym_id nullable
+category_id nullable
+source_id nullable
+source_name nullable
+slug
+name
+description
+difficulty
+equipment
+primary_muscles jsonb
+secondary_muscles jsonb
+instructions jsonb
+is_active
+created_at
+updated_at
+
+Note:
+
+global exercise: gym_id = null
+gym custom exercise: gym_id = gym
+
+That gives flexibility later.
+
+6.3 exercise_media
+
+Rename from exercise_media_map.
+
+Purpose:
+Store rich media per exercise.
+
+Fields:
+
+id
+exercise_id
+media_type
+media_url
+thumbnail_url nullable
+anatomy_image_url nullable
+source_name nullable
+quality_score nullable
+is_preferred
+created_at
+updated_at
+
+This is mostly a rename/cleanup.
+
+6.4 workout_templates
+
+This is what your current workouts mostly wants to be.
+
+Purpose:
+Reusable workout blueprints.
+
+Fields:
+
+id
+gym_id nullable
+title
+slug
+description
+category
+difficulty
+estimated_duration_minutes
+is_featured
+is_quick_start
+is_published
+source_type (global, gym)
+created_by_profile_id nullable
+created_at
+updated_at
+
+Why rename:
+“template” is clearer than “workout” when assignments and sessions also exist.
+
+6.5 workout_template_items
+
+This is evolved workout_steps.
+
+Purpose:
+Exercises/steps inside a workout template.
+
+Fields:
+
+id
+workout_template_id
+exercise_id nullable
+step_order
+title
+instruction_text nullable
+media_url nullable
+duration_seconds nullable
+reps nullable
+sets nullable
+rest_seconds nullable
+created_at
+updated_at
+
+Mostly a rename with cleaner semantics.
+
+6.6 member_workout_assignments
+
+New and very important.
+
+Purpose:
+Assign a workout template to a specific member.
+
+Fields:
+
+id
+gym_id
+member_id
+workout_template_id
+assigned_by_profile_id
+assigned_at
+starts_on nullable
+ends_on nullable
+status (assigned, active, completed, paused, cancelled)
+created_at
+updated_at
+
+This is a core missing link in your current system.
+
+Right now you have workouts and sessions.
+But not real program assignment logic.
+
+6.7 workout_sessions
+
+Keep, but redesign its meaning.
+
+Purpose:
+Track actual execution of an assigned or ad-hoc workout.
+
+Fields:
+
+id
+gym_id
+member_id
+member_workout_assignment_id nullable
+workout_template_id nullable
+started_at
+completed_at nullable
+duration_seconds nullable
+completion_percent
+status (in_progress, completed, abandoned)
+source (member_app, trainer, admin)
+created_at
+updated_at
+
+This stays, but now has a clearer relationship.
+
+6.8 workout_session_items
+
+New.
+
+Purpose:
+Track exercise-by-exercise execution inside a session.
+
+Fields:
+
+id
+workout_session_id
+exercise_id nullable
+sets_completed nullable
+reps_completed nullable
+duration_seconds nullable
+completed_at nullable
+notes nullable
+created_at
+
+This fixes the current shallow session model.
+
+7. Platform monetization redesign
+
+Current billing is buried inside tenants.
+That must change.
+
+7.1 plans
+
+New.
+
+Purpose:
+Platform pricing catalog.
+
+Fields:
+
+id
+name
+price_monthly_kes
+price_yearly_kes
+member_limit
+branch_limit
+staff_limit
+attendance_enabled
+workouts_enabled
+analytics_enabled
+branding_enabled
+campaigns_enabled
+created_at
+updated_at
+
+This becomes your commercial base.
+
+7.2 gym_subscriptions
+
+New.
+
+Purpose:
+Actual platform subscription per gym.
+
+Fields:
+
+id
+gym_id
+plan_id
+billing_cycle (monthly, yearly)
+status (trialing, active, past_due, cancelled, expired)
+starts_at
+ends_at
+next_billing_at nullable
+provider_name
+provider_customer_id nullable
+provider_subscription_id nullable
+created_at
+updated_at
+
+This removes business noise from the gym row.
+
+7.3 gym_feature_overrides
+
+Evolved from feature_flags.
+
+Purpose:
+Per-gym custom feature toggles.
+
+Fields:
+
+id
+gym_id
+feature_key
+enabled
+expires_at nullable
+created_at
+updated_at
+
+This is powerful because you can:
+
+run trials
+give custom deals
+do premium unlocks
+beta test features
+8. Support and audit domain
+
+These make the system safe and operable.
+
+8.1 audit_logs
+
+New.
+
+Purpose:
+Track sensitive actions.
+
+Fields:
+
+id
+actor_profile_id nullable
+actor_platform_admin_id nullable
+gym_id nullable
+action
+entity_type
+entity_id
+metadata jsonb
+created_at
+
+Use for:
+
+role change
+member deletion
+gym suspension
+plan override
+QR reset
+8.2 impersonation_sessions
+
+New.
+
+Purpose:
+Track support access by platform admins.
+
+Fields:
+
+id
+platform_admin_id
+gym_id
+reason
+started_at
+ended_at nullable
+created_at
+
+This is critical for trust and security.
+
+9. What stays, changes, or dies
+Keep with light modification
+tenants → becomes gyms
+tenant_settings → becomes gym_settings
+exercises
+exercise_media_map → becomes exercise_media
+equipment_types
+tenant_equipment_profiles
+workout_sessions
+Rename / reshape
+workouts → workout_templates
+workout_steps → workout_template_items
+feature_flags → gym_feature_overrides
+attendance_logs → attendance_checkins
+Split
+profiles must split into:
+profiles
+gym_user_roles
+members
+Add from scratch
+platform_admins
+plans
+gym_subscriptions
+branches
+membership_types
+member_memberships
+member_qr_codes
+member_workout_assignments
+workout_session_items
+audit_logs
+impersonation_sessions
+Likely deprecate later
+direct role on profiles
+direct tenant_id on profiles
+billing columns on tenants
+10. New relationship map
+
+Here is the new mental relationship structure:
+
+platform_admins -> profiles
+
+plans -> gym_subscriptions -> gyms
+gyms -> gym_settings
+gyms -> branches
+gyms -> gym_feature_overrides
+
+profiles -> gym_user_roles -> gyms
+profiles -> members (optional login link)
+
+gyms -> members
+gyms -> membership_types
+members -> member_memberships
+members -> member_qr_codes
+
+gyms -> attendance_checkins
+members -> attendance_checkins
+
+gyms -> exercises
+exercises -> exercise_media
+
+gyms -> workout_templates
+workout_templates -> workout_template_items
+members -> member_workout_assignments
+member_workout_assignments -> workout_sessions
+workout_sessions -> workout_session_items
+
+That is far cleaner than the current model.
+
+11. The most important schema truth
+
+If you remember only one thing from Part 2, remember this:
+
+The center of the system is no longer profiles
+
+The center becomes:
+
+gyms
+members
+member_memberships
+attendance_checkins
+member_workout_assignments
+
+That is the real v2 pivot.
+
+Because this is a gym business platform, not a user-profile app.
+
+12. My blunt judgment
+
+Your current schema is not trash.
+It is just too early-stage in its business modeling.
+
+The current DB mostly understands:
+
+gyms exist
+users exist
+workouts exist
+attendance exists
+
+V2 must understand:
+
+platform exists
+gym staff exists
+members exist separately
+memberships govern access
+attendance is validated
+workouts are assigned
+business rules matter
+
+That is the jump from MVP to real SaaS.
+
+13. What comes next
+
+Part 2 gave you:
+
+the new table architecture
+domain boundaries
+the split strategy
+the new center of truth
+
+The next part is where this becomes operational.
+
+
+___________________________________________________________________________________________________________________________________________________________________
+
+V2 Architecture Document — Part 3: Business Rules and System Logic
+
+This is where the schema becomes a real product.
+
+Part 2 defined the tables.
+Part 3 defines how the system behaves.
+
+Without this, you just have a database.
+With this, you have an operating system.
+
+1. Core rule engine
+
+Your v2 should run on 5 business engines:
+
+Access engine
+Membership engine
+Attendance engine
+Workout engine
+Platform control engine
+
+Later you add:
+6. Retention / intelligence engine
+
+2. Access engine
+
+This controls who can do what.
+
+2.1 Roles
+Platform roles
+super_admin
+platform_support
+platform_ops
+
+These roles live in:
+
+platform_admins
+
+They are platform-only.
+They are not gym roles.
+
+Gym roles
+gym_owner
+gym_admin
+front_desk
+trainer
+
+These live in:
+
+gym_user_roles
+
+They are gym-scoped.
+
+Member state
+
+A member is not a staff role.
+A member is a business entity in:
+
+members
+
+A member may optionally be linked to a login profile.
+
+2.2 Permission model
+Super admin can:
+create gyms
+suspend gyms
+assign plans
+override features
+view all gyms
+impersonate gym context
+view global analytics
+view subscription state
+Platform support can:
+inspect gyms
+impersonate
+view logs
+assist debugging
+
+But may not:
+
+change pricing
+delete platform records without authorization
+Gym owner can:
+manage staff
+manage members
+create membership types
+manage workouts
+see gym analytics
+update gym branding/settings
+Gym admin can:
+manage members
+manage workouts
+manage attendance
+view analytics
+manage selected staff actions
+
+But may be restricted from:
+
+changing owner-only billing/config
+Front desk can:
+search members
+scan QR
+validate membership
+check in/out members
+see limited member status
+
+But cannot:
+
+manage plans
+edit workouts
+view full analytics
+view platform data
+Trainer can:
+view assigned members
+assign workout plans
+create/update training programs
+log workout completion
+view limited member progress
+
+But cannot:
+
+change billing
+manage platform settings
+manage all staff unless allowed
+Member can:
+see own membership status
+see own workouts
+see own attendance history
+log own workout sessions
+receive notifications
+
+But can never:
+
+see other members
+access gym admin data
+access platform data
+2.3 Hard access rules
+
+These must be enforced server-side.
+
+Rule A
+
+A request must always resolve:
+
+who is the actor
+which gym they are acting inside
+which role they hold in that gym
+Rule B
+
+No gym-scoped query should trust the frontend’s claimed gym_id blindly.
+
+The backend must verify:
+
+actor has access to this gym
+actor role permits this action
+Rule C
+
+Platform admins operate outside tenant RLS assumptions, but support actions must be logged.
+
+Rule D
+
+Members only access their own data, even if linked to a profile.
+
+3. Membership engine
+
+This is one of the biggest upgrades from v1.
+
+Your current system does not have a real member membership lifecycle.
+V2 must.
+
+3.1 Membership lifecycle states
+
+Each member can exist in these business states:
+
+lead
+trial
+active
+inactive
+expired
+blocked
+
+This is member state in members.status.
+
+Separate from that, each commercial membership in member_memberships.status can be:
+
+active
+expired
+paused
+cancelled
+
+These are related but not identical.
+
+3.2 Key distinction
+
+A member can exist without an active membership.
+
+Examples:
+
+lead captured but never paid
+expired member still in system
+blocked member
+past customer
+trial user not converted
+
+This matters for analytics and reactivation later.
+
+3.3 Membership validation logic
+
+Whenever attendance or access is checked, the backend must determine:
+
+does member exist in this gym
+is member blocked
+is there an active membership row
+is today between start_date and end_date
+is payment status acceptable
+is attendance limit exceeded, if such rules exist
+Valid membership
+
+Member can check in.
+
+Expired membership
+
+Member cannot check in automatically.
+
+Paused membership
+
+Member cannot check in.
+
+Unpaid membership
+
+Business rule configurable:
+
+deny
+warn but allow
+allow for grace period
+
+This should become gym-configurable later.
+
+3.4 Renewal logic
+
+A membership approaching expiry should surface:
+
+expiring in 7 days
+expiring in 3 days
+expired today
+expired and inactive
+
+This powers:
+
+front desk alerts
+admin dashboard notices
+future reminders
+4. Attendance engine
+
+This is not just a log table.
+This is a validation system.
+
+4.1 Attendance flow
+
+Core flow:
+
+identify member
+identify gym and branch
+validate membership
+validate member status
+create attendance outcome
+optionally create checkout later
+emit analytics and audit events
+4.2 Member identification methods
+
+Support these methods:
+
+qr
+manual
+staff
+kiosk
+
+Later you can add:
+
+NFC
+biometric
+phone number lookup
+membership code
+4.3 Check-in outcomes
+
+A check-in attempt can end in:
+
+entered
+denied
+completed later after checkout
+
+Denial reasons may include:
+
+membership expired
+member blocked
+invalid QR
+wrong gym
+duplicate same-session scan
+branch restriction
+unpaid membership
+
+These should be stored, not ignored.
+
+4.4 Duplicate logic
+
+You need a clear policy.
+
+Recommended rule:
+
+allow only one active open check-in per member per branch at a time
+optionally allow multiple visits per day if they checked out
+configurable later if gym wants strict one-visit-per-day
+
+Do not lock yourself into the current simplistic unique-per-day model.
+
+4.5 Checkout logic
+
+Checkout should be optional but supported.
+
+Why it matters:
+
+duration analytics
+accurate active-in-gym view
+class/session monitoring
+peak hour analysis
+
+If a gym does not use checkout, system still works.
+If they do, analytics becomes stronger.
+
+4.6 Front desk behavior
+
+Front desk mode should return instantly:
+
+Success response
+member name
+photo
+membership valid
+plan name
+expiry date
+visits this month
+successful check-in time
+Denied response
+member name if identifiable
+exact denial reason
+next action prompt
+
+Example:
+
+“Membership expired 2 days ago”
+“Blocked member — contact admin”
+“Wrong branch access”
+4.7 Attendance business rules
+Rule A
+
+Attendance belongs to member_id, not profile_id.
+
+Rule B
+
+Every attendance row belongs to exactly one gym.
+
+Rule C
+
+Front desk attribution should be captured when staff performs check-in.
+
+Rule D
+
+All attendance actions that matter should be auditable.
+
+5. Workout engine
+
+This is where v1 is content-heavy but logic-light.
+V2 fixes that.
+
+5.1 Three workout layers
+
+You must keep these separate:
+
+Layer 1: Exercise library
+
+What movements exist.
+
+Tables:
+
+exercises
+exercise_media
+Layer 2: Workout templates
+
+Reusable plans/blueprints.
+
+Tables:
+
+workout_templates
+workout_template_items
+Layer 3: Member execution
+
+What a member was assigned and actually did.
+
+Tables:
+
+member_workout_assignments
+workout_sessions
+workout_session_items
+
+This split is essential.
+
+5.2 Assignment flow
+trainer/admin selects template
+assign to member
+assignment becomes active
+member sees assigned workout
+member starts session
+member completes items
+progress is recorded
+
+This is the proper program model.
+
+5.3 Workout states
+
+Assignments should support:
+
+assigned
+active
+completed
+paused
+cancelled
+
+Sessions should support:
+
+in_progress
+completed
+abandoned
+
+These states drive analytics and UX.
+
+5.4 Workout completion logic
+
+A workout session should not only store “completion percent.”
+It should optionally store:
+
+which items were completed
+completed reps/sets
+duration
+notes
+finish time
+
+That gives:
+
+better progress tracking
+trainer insights
+future recommendation quality
+5.5 Global vs gym templates
+
+Global templates:
+
+platform-provided
+reusable across gyms
+
+Gym templates:
+
+custom to one gym
+private to that gym
+
+This must be clearly supported.
+
+Rule
+
+A gym can use global templates and create its own templates.
+It should not mutate the global template directly.
+
+If customization is needed:
+
+clone global to gym-owned template
+or
+support override layer later
+6. Platform control engine
+
+This is your money/control layer.
+
+6.1 Plan logic
+
+A gym’s commercial access should come from:
+
+base plan
+subscription status
+feature overrides
+
+Not from random scattered checks.
+
+6.2 Platform subscription evaluation
+
+When a gym uses the product, backend determines:
+
+gym active?
+subscription active?
+trial valid?
+feature enabled by plan?
+feature overridden?
+
+This affects surfaces like:
+
+attendance module
+workout module
+analytics module
+premium branding
+campaign tools
+6.3 Plan vs feature override rule
+Base rule
+
+Plan defines normal access.
+
+Override rule
+
+Feature override can:
+
+unlock a feature
+disable a feature
+enable temporary trials
+
+This gives you flexibility for sales and support.
+
+7. Surface-specific logic
+
+Each surface should behave differently.
+
+7.1 Platform panel
+
+Primary focus:
+
+gyms
+subscriptions
+feature control
+support
+aggregate metrics
+
+Needs:
+
+platform-only permissions
+impersonation
+audit visibility
+7.2 Gym dashboard
+
+Primary focus:
+
+members
+memberships
+attendance
+workouts
+analytics
+staff
+
+Needs:
+
+gym-scoped permissions
+operational workflows
+no cross-gym leakage
+7.3 Front desk mode
+
+Primary focus:
+
+speed
+validation
+minimal clicks
+big success/failure state
+
+Needs:
+
+limited permission set
+optimized API
+device-friendly UX
+7.4 Member app
+
+Primary focus:
+
+assigned workouts
+workout history
+attendance history
+membership status
+progress
+
+Needs:
+
+self-only data access
+mobile-first UX
+8. State model
+
+This is how you make the system feel intelligent later.
+
+8.1 Member business state
+
+A member can be:
+
+new
+trial
+active
+at risk
+inactive
+expired
+reactivated
+blocked
+
+In v2 MVP, you can store core status simply.
+Later, intelligence layer computes richer derived states.
+
+8.2 Gym subscription state
+
+A gym can be:
+
+trialing
+active
+past_due
+cancelled
+expired
+suspended
+
+This affects product access.
+
+8.3 Assignment state
+
+Workout assignments can be:
+
+assigned
+active
+paused
+completed
+cancelled
+
+This affects member app flow.
+
+9. Auditing rules
+
+You need logs from the start for sensitive actions.
+
+Must audit:
+gym created
+gym suspended
+plan changed
+feature override changed
+staff role changed
+member blocked/unblocked
+QR reset
+impersonation started/stopped
+
+This protects you later when support and billing get real.
+
+10. Data isolation rules
+
+These are non-negotiable.
+
+Rule 1
+
+Every gym-owned business table must contain gym_id.
+
+Rule 2
+
+Every gym-scoped query must be filtered by verified gym context.
+
+Rule 3
+
+No member-facing endpoint may expose another member’s data.
+
+Rule 4
+
+No gym admin endpoint may expose cross-gym data.
+
+Rule 5
+
+Platform access paths must be clearly separate from gym routes.
+
+11. What v2 should optimize for
+
+The business rules should optimize for 4 outcomes:
+
+1. Operational clarity
+
+Gym staff know what to do fast.
+
+2. Access correctness
+
+Wrong people cannot do wrong things.
+
+3. Business realism
+
+Memberships, attendance, and assignments reflect actual gym operations.
+
+4. Future intelligence
+
+Data is structured well enough for churn, retention, and analytics later.
+
+12. Biggest logic changes from v1
+
+These are the real upgrades.
+
+v1:
+
+profiles were people, roles, and members all in one
+
+v2:
+
+people, roles, and members are separate
+
+v1:
+
+attendance was a simple daily log
+
+v2:
+
+attendance is validated operational presence
+
+v1:
+
+workouts were mostly content + sessions
+
+v2:
+
+workouts are content + assignment + execution
+
+v1:
+
+billing was attached directly to tenant row
+
+v2:
+
+billing becomes a real platform subscription model
+
+13. Blunt verdict
+
+Part 3 is where your product stops being “a gym-themed app” and starts becoming “a gym operating system.”
+
+Because now the system understands:
+
+authority
+ownership
+lifecycle
+validation
+assignment
+commercial logic
+
+That is the difference between hobby architecture and real SaaS architecture.
+___________________________________________________________________________________________________________________________________________________________________
+🧠 1. THE CORE PRINCIPLE
+
+You are NOT rebuilding from scratch.
+
+You are doing a:
+
+controlled evolution (parallel upgrade)
+
+Meaning:
+
+old system keeps working
+new system is introduced gradually
+you migrate piece by piece
+no downtime chaos
+🚨 2. WHAT YOU MUST NOT DO
+
+Do NOT:
+
+delete current tables immediately ❌
+rewrite everything at once ❌
+break existing flows ❌
+mix old and new logic randomly ❌
+
+That is how systems die.
+
+🧱 3. MIGRATION STRATEGY OVERVIEW
+
+We will use a 4-phase migration model:
+
+🔵 PHASE 1 — FOUNDATION (SAFE ADDITIONS)
+
+👉 Add new tables WITHOUT breaking anything
+
+You do NOT touch old tables yet.
+
+Create:
+gym_user_roles
+members
+membership_types
+member_memberships
+attendance_checkins (new version)
+member_workout_assignments
+workout_session_items
+plans
+gym_subscriptions
+platform_admins
+
+👉 Everything new runs in parallel
+
+🟡 PHASE 2 — DUAL SYSTEM (TRANSITION)
+
+👉 Start using new system while old still exists
+
+This is critical.
+
+Example:
+attendance:
+old: attendance_logs
+new: attendance_checkins
+
+You:
+
+write to BOTH (temporary)
+read from old OR new depending on feature
+🟠 PHASE 3 — SWITCH OVER
+
+👉 Switch features to new system fully
+
+stop writing to old tables
+migrate reads to new tables
+validate everything works
+🔴 PHASE 4 — CLEANUP
+
+👉 Remove old structures safely
+
+drop old columns/tables
+remove legacy logic
+simplify codebase
+🧩 4. EXACT MIGRATION ORDER (VERY IMPORTANT)
+
+Follow this order strictly.
+
+STEP 1 — Identity Separation
+Add:
+gym_user_roles
+Then:
+stop relying on profiles.role
+keep it temporarily, but mark as deprecated
+STEP 2 — Member System
+Add:
+members
+membership_types
+member_memberships
+Then:
+map existing profiles → members
+
+Example logic:
+
+for each profile with role = member:
+→ create member record
+STEP 3 — Attendance Upgrade
+Add:
+attendance_checkins
+Then:
+update check-in logic:
+use member_id
+validate membership
+temporarily still write to attendance_logs
+STEP 4 — Workout Assignment
+Add:
+member_workout_assignments
+workout_session_items
+Then:
+start assigning workouts properly
+keep old sessions working
+STEP 5 — Billing Separation
+Add:
+plans
+gym_subscriptions
+Then:
+migrate billing fields out of tenants
+STEP 6 — Platform Layer
+Add:
+platform_admins
+Then:
+remove super_admin from profiles.role
+🔄 5. DATA MIGRATION RULES
+
+This is where people break things.
+
+Rule 1 — NEVER delete before copying
+
+Always:
+
+create new table
+copy data
+verify
+switch reads
+THEN delete
+Rule 2 — Use mapping scripts
+
+Example:
+
+Profiles → Members
+for each profile:
+  if role == 'member':
+    create member:
+      gym_id = profile.tenant_id
+      name = profile.full_name
+      phone = profile.phone
+      profile_id = profile.id
+Rule 3 — Preserve IDs temporarily
+
+Keep:
+
+old IDs
+new IDs
+
+So you can debug mismatches.
+
+Rule 4 — Log migration steps
+
+Create a simple migration log:
+
+what ran
+when
+how many rows affected
+⚠️ 6. RISK AREAS (WATCH THESE)
+🚨 1. Profile → Member split
+
+Biggest risk.
+
+Why:
+
+everything currently depends on profiles
+
+Mitigation:
+
+do not remove profile usage immediately
+gradually shift features
+🚨 2. Attendance switching
+
+Risk:
+
+duplicate logs
+inconsistent history
+
+Mitigation:
+
+run dual-write temporarily
+compare counts
+🚨 3. Membership logic
+
+Risk:
+
+incorrect validation → users blocked or allowed wrongly
+
+Mitigation:
+
+log validation decisions
+test edge cases
+🚨 4. Billing migration
+
+Risk:
+
+breaking subscriptions
+losing plan data
+
+Mitigation:
+
+keep old billing fields until verified
+🚨 5. Role system
+
+Risk:
+
+users lose access
+wrong permissions
+
+Mitigation:
+
+run both role systems temporarily
+🧠 7. FEATURE ROLLOUT PLAN
+
+Do NOT release everything at once.
+
+Phase A — Sellable core (FAST)
+
+Build:
+
+members
+memberships
+attendance_checkins
+front desk flow
+
+👉 This alone can get clients
+
+Phase B — Experience upgrade
+
+Add:
+
+workout assignments
+member app improvements
+Phase C — Intelligence layer
+
+Add:
+
+alerts
+churn signals
+analytics
+🧠 8. CODEBASE STRATEGY
+
+You must restructure code alongside DB.
+
+DO THIS:
+Separate layers:
+/services
+  /members
+  /attendance
+  /workouts
+  /platform
+Keep API thin:
+no business logic in routes
+all logic in services
+Add permission helpers:
+requireGymRole(user, gymId, ['gym_admin'])
+requirePlatformRole(user, ['super_admin'])
+🔥 9. MIGRATION TIMELINE (REALISTIC)
+
+If focused:
+
+Week 1
+add new tables
+implement member system
+Week 2
+implement new attendance
+front desk working
+Week 3
+workout assignment system
+Week 4
+billing + platform admin
+
+Then:
+
+cleanup + polish
+🧠 10. FINAL STRATEGY SUMMARY
+
+You are doing:
+
+👉 parallel evolution
+
+Not:
+👉 rebuild-from-scratch chaos
+
+💣 THE MOST IMPORTANT THING
+
+Do NOT rush to “perfect system”
+
+Focus on:
+
+working system
+correct architecture
+gradual upgrade
+🚀 FINAL VERDICT
+
+You now have:
+
+correct system vision (Part 1)
+correct database model (Part 2)
+correct business logic (Part 3)
+correct migration strategy (Part 4)
+
+This is real SaaS architecture level
+___________________________________________________________________________________________________________________________________________________________________
+
+
+
+This is your V2 Implementation Plan — not theory, not ideas — what you do, step by step.
+
+I’m going to structure this like a high-performance build sprint (you can drop this straight into ClickUp).
+
+🚀 OVERALL STRATEGY
+
+You are building in 4 execution phases:
+
+Core Foundation (money engine)
+Attendance Engine (sellable feature)
+Workout System (experience layer)
+Platform + Intelligence (scale layer)
+
+👉 Goal: get something usable + sellable FAST, then expand.
+
+🧠 RULES BEFORE YOU START
+No feature without backend logic
+No UI without real data
+No mixing old + new logic randomly
+Every module = isolated service
+Always test flows, not just endpoints
+🗺️ WEEK-BY-WEEK EXECUTION PLAN
+🟦 WEEK 1 — FOUNDATION (DO NOT SKIP)
+
+👉 This week fixes your broken core
+
+🔹 DAY 1 — DATABASE SETUP
+Create tables:
+gym_user_roles
+members
+membership_types
+member_memberships
+Tasks:
+write SQL migrations
+add indexes
+add foreign keys
+ensure gym_id exists everywhere
+🔹 DAY 2 — PROFILE → MEMBER SPLIT
+Tasks:
+create migration script:
+convert profiles (role=member) → members
+keep profile_id optional link
+DO NOT delete profiles logic yet
+Build:
+members.service.ts
+members.repo.ts
+🔹 DAY 3 — ROLE SYSTEM
+Build:
+gym_user_roles logic
+Functions:
+requireGymRole(user, gymId, ['gym_admin'])
+requirePlatformRole(user, ['super_admin'])
+Replace:
+stop relying on profiles.role
+🔹 DAY 4 — MEMBERSHIP SYSTEM
+Build:
+membership types CRUD
+member membership creation
+Endpoints:
+/api/gym/membership-types
+/api/gym/member-memberships
+🔹 DAY 5 — MEMBERS UI (MINIMAL)
+Build:
+add member form
+list members
+assign membership
+
+👉 Keep UI simple but clean
+
+🔹 DAY 6 — TEST FOUNDATION
+
+Test:
+
+create gym
+add member
+assign membership
+roles working correctly
+🔹 DAY 7 — BUFFER + FIXES
+
+Fix:
+
+bugs
+validation issues
+missing fields
+🟩 WEEK 2 — ATTENDANCE ENGINE (SELLABLE)
+
+👉 This is your first money feature
+
+🔹 DAY 8 — ATTENDANCE TABLE
+
+Create:
+
+attendance_checkins
+🔹 DAY 9 — CHECK-IN LOGIC
+
+Build service:
+
+checkInMember(memberId, gymId)
+
+Logic:
+
+validate membership
+validate status
+create check-in
+return response
+🔹 DAY 10 — FRONT DESK API
+
+Endpoints:
+
+/api/checkin/scan
+/api/checkin/manual
+/api/checkin/status
+🔹 DAY 11 — FRONT DESK UI
+
+Page:
+
+/checkin
+
+Features:
+
+search member
+QR input (start simple)
+success/failure display
+🔹 DAY 12 — VALIDATION UX
+
+Show:
+
+membership status
+expiry
+denial reason
+🔹 DAY 13 — ATTENDANCE HISTORY
+
+Page:
+
+attendance logs
+filter by date/member
+🔹 DAY 14 — TEST + POLISH
+
+Test:
+
+expired member
+valid member
+blocked member
+multiple check-ins
+
+👉 At this point you can DEMO to a gym
+
+🟨 WEEK 3 — WORKOUT SYSTEM (EXPERIENCE)
+🔹 DAY 15 — WORKOUT REFACTOR
+
+Rename mentally:
+
+workouts → templates
+
+Add:
+
+member_workout_assignments
+🔹 DAY 16 — ASSIGNMENT LOGIC
+
+Build:
+
+assignWorkout(memberId, templateId)
+🔹 DAY 17 — MEMBER WORKOUT VIEW
+
+Page:
+
+/m/[gym]/workouts
+
+Show:
+
+assigned workouts
+🔹 DAY 18 — SESSION START
+
+Build:
+
+startWorkoutSession()
+🔹 DAY 19 — SESSION TRACKING
+
+Add:
+
+workout_session_items
+
+Track:
+
+reps
+duration
+completion
+🔹 DAY 20 — WORKOUT UI IMPROVEMENT
+
+Make it:
+
+mobile-first
+clean
+simple
+🔹 DAY 21 — TEST FULL FLOW
+
+Test:
+
+assign workout
+complete workout
+view progress
+🟥 WEEK 4 — PLATFORM + CONTROL
+🔹 DAY 22 — PLANS TABLE
+
+Create:
+
+plans
+🔹 DAY 23 — SUBSCRIPTIONS
+
+Create:
+
+gym_subscriptions
+
+Move billing logic out of tenants
+
+🔹 DAY 24 — FEATURE FLAGS
+
+Create:
+
+gym_feature_overrides
+🔹 DAY 25 — PLATFORM ADMIN
+
+Create:
+
+platform_admins
+🔹 DAY 26 — PLATFORM DASHBOARD
+
+Page:
+
+/platform
+
+Show:
+
+gyms
+plans
+status
+🔹 DAY 27 — IMPERSONATION (BASIC)
+
+Allow:
+
+super admin → view gym context
+🔹 DAY 28 — FINAL TEST
+
+Test:
+
+full system flow
+multiple gyms
+role isolation
+no data leakage
+🧠 DAILY TASK STRUCTURE (USE THIS)
+
+Every day:
+
+Define feature
+Build DB (if needed)
+Build service layer
+Build API
+Build UI
+Test full flow
+📁 CODE STRUCTURE YOU MUST FOLLOW
+/server
+  /services
+    members
+    memberships
+    attendance
+    workouts
+    platform
+
+  /repositories
+  /policies
+  /utils
+
+/app
+  /dashboard
+  /checkin
+  /m
+  /platform
+🧠 CRITICAL DEV RULES
+RULE 1
+
+NO business logic in UI
+
+RULE 2
+
+EVERY API checks permissions
+
+RULE 3
+
+ALWAYS filter by gym_id
+
+RULE 4
+
+NEVER trust frontend input
+
+RULE 5
+
+TEST REAL FLOWS, not just functions
+
+💣 WHAT YOU WILL HAVE AFTER 4 WEEKS
+
+If you execute properly:
+
+You will have:
+
+real multi-tenant system
+clean role system
+real membership engine
+working attendance system
+workout assignment system
+platform admin control
+scalable architecture
+
+👉 This is not beginner level anymore
+
+🎯 REALISTIC FIRST SALES POINT
+
+You can start pitching after:
+
+👉 WEEK 2 (attendance complete)
+
+Because gyms will pay for:
+
+check-ins
+membership validation
+logs
+🧠 FINAL ADVICE
+
+Don’t chase perfection.
+
+Focus on:
+
+working flows
+clean architecture
+fast iteration
