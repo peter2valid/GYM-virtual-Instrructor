@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, Flame, Dumbbell } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
-import { getTenantBySlug } from "@/features/tenants/queries";
+import { getTenantBySlug, getFeatureFlagsForTenant } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import {
   getFeaturedWorkoutsForTenant,
@@ -38,10 +38,11 @@ export default async function GymLandingPage({ params }: Props) {
 
   if (!tenant) notFound();
 
-  const [featured, categories, memberStats] = await Promise.all([
+  const [featured, categories, memberStats, flags] = await Promise.all([
     getFeaturedWorkoutsForTenant(tenant.id, 3),
     getCategoriesForTenant(tenant.id),
     user ? getMemberStats(user.id, tenant.id) : Promise.resolve(null),
+    getFeatureFlagsForTenant(tenant.id),
   ]);
 
   // Category counts from the full published list
@@ -66,26 +67,32 @@ export default async function GymLandingPage({ params }: Props) {
           )}
         </div>
         <div className="flex items-center gap-3">
-          <Link
-            href={`/g/${gymSlug}/history`}
-            className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            History
-          </Link>
-          {user ? (
+          {flags.workout_history && (
             <Link
-              href={`/g/${gymSlug}/me`}
-              className="rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+              href={`/g/${gymSlug}/history`}
+              className="text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
-              My Profile
+              History
             </Link>
-          ) : (
-            <Link
-              href={`/login?next=/g/${gymSlug}`}
-              className="rounded-full bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.12)] transition-shadow"
-            >
-              Sign In
-            </Link>
+          )}
+          {flags.member_login && (
+            user ? (
+              flags.member_dashboard ? (
+                <Link
+                  href={`/g/${gymSlug}/me`}
+                  className="rounded-full bg-primary px-3.5 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90 transition-opacity shadow-sm"
+                >
+                  My Profile
+                </Link>
+              ) : null
+            ) : (
+              <Link
+                href={`/login?next=/g/${gymSlug}`}
+                className="rounded-full bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-[0_1px_3px_rgba(0,0,0,0.08)] hover:shadow-[0_2px_6px_rgba(0,0,0,0.12)] transition-shadow"
+              >
+                Sign In
+              </Link>
+            )
           )}
         </div>
       </nav>
@@ -192,7 +199,7 @@ export default async function GymLandingPage({ params }: Props) {
       )}
 
       {/* ── Progress Teaser ────────────────────────────────────────────── */}
-      {memberStats && (
+      {memberStats && flags.workout_history && (
         <section className="mb-10">
           <Link
             href={`/g/${gymSlug}/progress`}

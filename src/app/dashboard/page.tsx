@@ -30,15 +30,31 @@ export default async function DashboardPage() {
     redirect("/gym-admin");
   }
 
-  // Member — redirect to their gym's landing page
-  if (profile.role === "member" && profile.tenant_id) {
-    const { data: tenant } = await client
-      .from("tenants")
-      .select("slug")
-      .eq("id", profile.tenant_id)
+  // Member — find their gym via members table (V2) or profiles.tenant_id (legacy)
+  if (profile.role === "member") {
+    // V2: look up gym membership
+    const { data: membership } = await client
+      .from("members")
+      .select("tenants(slug)")
+      .eq("profile_id", user.id)
+      .eq("status", "active")
+      .order("joined_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
-    if (tenant?.slug) redirect(`/g/${tenant.slug}`);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const slug = (membership?.tenants as any)?.slug;
+    if (slug) redirect(`/g/${slug}`);
+
+    // Legacy fallback: profiles.tenant_id
+    if (profile.tenant_id) {
+      const { data: tenant } = await client
+        .from("tenants")
+        .select("slug")
+        .eq("id", profile.tenant_id)
+        .maybeSingle();
+      if (tenant?.slug) redirect(`/g/${tenant.slug}`);
+    }
   }
 
   // Fallback

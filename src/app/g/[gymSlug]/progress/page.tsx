@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Flame, Trophy, Zap, TrendingUp, Calendar, Star, Target, Rocket } from "lucide-react";
-import { getTenantBySlug } from "@/features/tenants/queries";
+import { getTenantBySlug, getFeatureFlagsForTenant } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import { getMemberStats, getMemberHeatmapData, getGymLeaderboard } from "@/features/sessions/queries";
 import { WeeklyActivityChart } from "@/components/charts/WeeklyActivityChart";
@@ -24,6 +24,9 @@ export default async function ProgressPage({ params }: Props) {
   ]);
 
   if (!tenant) notFound();
+
+  const flags = await getFeatureFlagsForTenant(tenant.id);
+  if (!flags.workout_history) redirect(`/g/${gymSlug}`);
 
   if (!user) {
     return (

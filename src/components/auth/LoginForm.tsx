@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { createBrowserSupabaseClient } from "@/lib/supabase";
 import { ROUTES } from "@/lib/constants";
+import { reconcileAfterPhoneAuth } from "@/features/auth/reconcile";
 
 const emailSchema = z.object({
   email: z.string().min(1, "Email is required").email("Invalid email address"),
@@ -30,7 +31,8 @@ interface LoginFormProps {
 
 export function LoginForm({ gymName }: LoginFormProps) {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const gymSlug = searchParams.get("gym");
+  const next = searchParams.get("next") ?? (gymSlug ? `/g/${gymSlug}` : "/dashboard");
 
   const [tab, setTab] = useState<"email" | "phone">("email");
   const [loading, setLoading] = useState(false);
@@ -89,8 +91,10 @@ export function LoginForm({ gymName }: LoginFormProps) {
       token: data.otp,
       type: "sms",
     });
+    if (verifyError) { setLoading(false); setError(verifyError.message); return; }
+    // Reconcile profiles + members (phone OTP bypasses /auth/callback)
+    await reconcileAfterPhoneAuth(gymSlug ?? undefined);
     setLoading(false);
-    if (verifyError) { setError(verifyError.message); return; }
     window.location.href = next;
   }
 

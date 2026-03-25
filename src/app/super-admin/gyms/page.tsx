@@ -3,6 +3,7 @@ import { getAuthUser } from "@/features/auth/actions";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { getAllTenantsWithStats } from "@/features/sessions/queries";
 import Link from "next/link";
+import { CreateGymDialog } from "./CreateGymDialog";
 
 export const metadata = { title: "All Gyms" };
 
@@ -38,12 +39,15 @@ export default async function SuperAdminGymsPage() {
             {tenants.length} gym{tenants.length !== 1 ? "s" : ""} &middot; {totalMembers} members &middot; {totalSessions} sessions
           </p>
         </div>
-        <Link
-          href="/super-admin/subscriptions"
-          className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
-        >
-          Manage plans
-        </Link>
+        <div className="flex items-center gap-3">
+          <CreateGymDialog />
+          <Link
+            href="/super-admin/subscriptions"
+            className="rounded-xl border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-accent"
+          >
+            Manage plans
+          </Link>
+        </div>
       </div>
 
       <div className="rounded-xl border border-border bg-card">
@@ -63,7 +67,9 @@ export default async function SuperAdminGymsPage() {
             {tenants.map((t) => (
               <div key={t.id} className="grid grid-cols-[1fr_120px_80px_100px_80px] items-center px-4 py-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-foreground">{t.name}</p>
+                  <Link href={`/super-admin/gyms/${t.id}`} className="truncate text-sm font-medium text-foreground hover:underline underline-offset-4">
+                    {t.name}
+                  </Link>
                   <p className="text-xs text-muted-foreground">
                     since {new Date(t.createdAt).toLocaleDateString("en", { month: "short", year: "numeric" })}
                   </p>

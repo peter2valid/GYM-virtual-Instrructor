@@ -30,11 +30,11 @@ export default async function SuperAdminSupportPage() {
   ] = await Promise.all([
     client.from("tenants").select("*", { count: "exact", head: true }),
     client.from("tenants").select("*", { count: "exact", head: true }).eq("is_active", true),
-    client.from("profiles").select("*", { count: "exact", head: true }).eq("role", "member"),
+    client.from("members").select("*", { count: "exact", head: true }),
     client.from("workout_sessions").select("*", { count: "exact", head: true }).eq("status", "completed"),
     client.from("workout_sessions").select("*", { count: "exact", head: true }).eq("status", "completed").gte("completed_at", today.toISOString()),
     client.from("workout_sessions").select("*", { count: "exact", head: true }).eq("status", "completed").gte("completed_at", sevenDaysAgo.toISOString()),
-    client.from("attendance_logs").select("*", { count: "exact", head: true }),
+    client.from("attendance_checkins").select("*", { count: "exact", head: true }),
   ]);
 
   const stats = [

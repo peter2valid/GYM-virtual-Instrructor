@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAuthUser } from "@/features/auth/actions";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
+import { getCheckins, getCheckinsCountByDay } from "@/features/members/queries";
 
 export const metadata = { title: "Attendance" };
 
@@ -19,40 +20,24 @@ export default async function GymAdminAttendancePage() {
     return <div className="py-24 text-center text-sm text-muted-foreground">Access denied.</div>;
   }
 
-  const tenantId = profile.tenant_id;
+  const gymId = profile.tenant_id;
   const today = new Date().toISOString().split("T")[0];
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
-  // Fetch last 100 check-ins with member name
-  const { data: logs } = await client
-    .from("attendance_logs")
-    .select("id, attendance_date, checked_in_at, source, member_id, profiles(full_name)")
-    .eq("tenant_id", tenantId)
-    .gte("attendance_date", thirtyDaysAgo)
-    .order("checked_in_at", { ascending: false })
-    .limit(100);
+  const [checkins, countByDay] = await Promise.all([
+    getCheckins(gymId, 100, thirtyDaysAgo),
+    getCheckinsCountByDay(gymId, 14),
+  ]);
 
-  // Daily counts for last 14 days
-  const { data: dailyCounts } = await client
-    .from("attendance_logs")
-    .select("attendance_date")
-    .eq("tenant_id", tenantId)
-    .gte(
-      "attendance_date",
-      new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
-    );
+  const todayCount = Object.entries(countByDay)
+    .filter(([day]) => day === today)
+    .reduce((s, [, v]) => s + v, 0);
 
-  const countByDay: Record<string, number> = {};
-  for (const row of dailyCounts ?? []) {
-    countByDay[row.attendance_date] = (countByDay[row.attendance_date] ?? 0) + 1;
-  }
-
-  const todayCount = countByDay[today] ?? 0;
-  const totalThisMonth = logs?.length ?? 0;
-
-  const rows = logs ?? [];
+  const totalThisMonth = checkins.length;
+  const dailyAvg = Math.round(
+    Object.values(countByDay).reduce((a, b) => a + b, 0) /
+      Math.max(Object.keys(countByDay).length, 1)
+  );
 
   return (
     <div className="space-y-6">
@@ -61,70 +46,52 @@ export default async function GymAdminAttendancePage() {
         <p className="text-sm text-muted-foreground">QR check-ins from the last 30 days.</p>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
         <StatCard label="Today" value={todayCount} />
         <StatCard label="Last 30 days" value={totalThisMonth} />
-        <StatCard
-          label="Daily avg (14d)"
-          value={
-            Math.round(
-              Object.values(countByDay).reduce((a, b) => a + b, 0) /
-                Math.max(Object.keys(countByDay).length, 1)
-            )
-          }
-        />
+        <StatCard label="Daily avg (14d)" value={dailyAvg} />
       </div>
 
-      {/* Daily bar chart */}
       <DailyChart countByDay={countByDay} />
 
-      {/* Check-in log */}
       <div className="rounded-xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3">
           <p className="text-sm font-semibold text-foreground">Recent Check-Ins</p>
         </div>
-        {rows.length === 0 ? (
+        {checkins.length === 0 ? (
           <p className="px-4 py-10 text-center text-sm text-muted-foreground">
             No check-ins recorded yet. Share your QR code to get started.
           </p>
         ) : (
           <div className="divide-y divide-border">
-            {/* Header */}
             <div className="grid grid-cols-[1fr_auto_auto] gap-4 px-4 py-2.5 text-xs font-medium text-muted-foreground">
               <span>Member</span>
               <span>Date &amp; Time</span>
-              <span>Source</span>
+              <span>Method</span>
             </div>
-            {rows.map((log) => {
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const memberName = (log.profiles as any)?.full_name ?? null;
-              const dateStr = log.checked_in_at
-                ? new Date(log.checked_in_at).toLocaleString("en", {
+            {checkins.map((c) => (
+              <div key={c.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3">
+                <div>
+                  <p className="text-sm text-foreground">
+                    {c.memberName ?? <span className="text-muted-foreground">Unknown member</span>}
+                  </p>
+                  {c.memberEmail && (
+                    <p className="text-xs text-muted-foreground">{c.memberEmail}</p>
+                  )}
+                </div>
+                <span className="text-xs text-muted-foreground">
+                  {new Date(c.checkinAt).toLocaleString("en", {
                     month: "short",
                     day: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
-                  })
-                : log.attendance_date;
-
-              return (
-                <div
-                  key={log.id}
-                  className="grid grid-cols-[1fr_auto_auto] items-center gap-4 px-4 py-3"
-                >
-                  <span className="text-sm text-foreground">
-                    {memberName ?? (
-                      <span className="text-muted-foreground">Anonymous</span>
-                    )}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{dateStr}</span>
-                  <span className="text-xs capitalize text-muted-foreground">
-                    {log.source?.replace("_", " ")}
-                  </span>
-                </div>
-              );
-            })}
+                  })}
+                </span>
+                <span className="text-xs capitalize text-muted-foreground">
+                  {c.checkinMethod.replace("_", " ")}
+                </span>
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -142,7 +109,6 @@ function StatCard({ label, value }: { label: string; value: number }) {
 }
 
 function DailyChart({ countByDay }: { countByDay: Record<string, number> }) {
-  // Build last 14 days
   const days = Array.from({ length: 14 }, (_, i) => {
     const d = new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000);
     return d.toISOString().split("T")[0];
@@ -159,19 +125,11 @@ function DailyChart({ countByDay }: { countByDay: Record<string, number> }) {
           const height = Math.max((count / max) * 100, count > 0 ? 8 : 2);
           const isToday = day === new Date().toISOString().split("T")[0];
           return (
-            <div
-              key={day}
-              title={`${day}: ${count}`}
-              className="group relative flex-1"
-            >
+            <div key={day} title={`${day}: ${count}`} className="group relative flex-1">
               <div
                 style={{ height: `${height}%` }}
                 className={`w-full rounded-t transition-colors ${
-                  isToday
-                    ? "bg-primary"
-                    : count > 0
-                    ? "bg-primary/40"
-                    : "bg-muted"
+                  isToday ? "bg-primary" : count > 0 ? "bg-primary/40" : "bg-muted"
                 }`}
               />
             </div>

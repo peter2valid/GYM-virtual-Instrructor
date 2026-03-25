@@ -1,10 +1,9 @@
-import { redirect } from "next/navigation";
+import { redirect, notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, User, Mail, LogOut, Shield } from "lucide-react";
 import { getAuthUser } from "@/features/auth/actions";
-import { getTenantBySlug } from "@/features/tenants/queries";
+import { getTenantBySlug, getFeatureFlagsForTenant } from "@/features/tenants/queries";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
-import { notFound } from "next/navigation";
 import { ProfileForm } from "../ProfileForm";
 import { SignOutButton } from "../SignOutButton";
 
@@ -23,6 +22,10 @@ export default async function EditProfilePage({ params }: Props) {
   ]);
 
   if (!tenant) notFound();
+
+  const flags = await getFeatureFlagsForTenant(tenant.id);
+  if (!flags.member_dashboard) redirect(`/g/${gymSlug}`);
+
   if (!user) redirect(`/login?next=/g/${gymSlug}/me/edit`);
 
   const client = await createServerSupabaseClient();

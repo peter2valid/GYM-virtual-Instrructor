@@ -29,6 +29,25 @@ export interface TenantStats {
   completionRate: number;
 }
 
+// ─── row mapper ───────────────────────────────────────────────────────────────
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapSession(row: any): SessionWithWorkout {
+  const wt = row.workout_templates ?? row.workouts ?? null;
+  return {
+    id: row.id,
+    workoutId: row.workout_template_id ?? row.workout_id,
+    workoutTitle: wt?.title ?? "Unknown Workout",
+    workoutCategory: wt?.category ?? "",
+    workoutDifficulty: wt?.difficulty ?? "beginner",
+    startedAt: row.started_at,
+    completedAt: row.completed_at,
+    status: row.status,
+    completionPercent: row.completion_percent,
+    totalDurationSeconds: row.total_duration_seconds,
+  };
+}
+
 // ─── getSessionHistory ────────────────────────────────────────────────────────
 
 export async function getSessionHistory(
@@ -41,7 +60,7 @@ export async function getSessionHistory(
   const client = await createServerSupabaseClient();
   const { data, error } = await client
     .from("workout_sessions")
-    .select("*, workouts(title, category, difficulty)")
+    .select("*, workout_templates(title, category, difficulty)")
     .eq("member_id", memberId)
     .eq("tenant_id", tenantId)
     .eq("status", "completed")
@@ -49,20 +68,7 @@ export async function getSessionHistory(
     .limit(limit);
 
   if (error || !data) return [];
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    id: row.id,
-    workoutId: row.workout_id,
-    workoutTitle: row.workouts?.title ?? "Unknown Workout",
-    workoutCategory: row.workouts?.category ?? "",
-    workoutDifficulty: row.workouts?.difficulty ?? "beginner",
-    startedAt: row.started_at,
-    completedAt: row.completed_at,
-    status: row.status,
-    completionPercent: row.completion_percent,
-    totalDurationSeconds: row.total_duration_seconds,
-  }));
+  return data.map(mapSession);
 }
 
 // ─── getMemberStats ───────────────────────────────────────────────────────────
@@ -84,7 +90,7 @@ export async function getMemberStats(
   const client = await createServerSupabaseClient();
   const { data, error } = await client
     .from("workout_sessions")
-    .select("completed_at, total_duration_seconds, workouts(category)")
+    .select("completed_at, total_duration_seconds, workout_templates(category)")
     .eq("member_id", memberId)
     .eq("tenant_id", tenantId)
     .eq("status", "completed")
@@ -98,17 +104,15 @@ export async function getMemberStats(
     data.reduce((sum: number, s: any) => sum + (s.total_duration_seconds ?? 0), 0) / 60
   );
 
-  // Favorite category
   const categoryCount: Record<string, number> = {};
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const s of data as any[]) {
-    const cat = s.workouts?.category;
+    const cat = s.workout_templates?.category;
     if (cat) categoryCount[cat] = (categoryCount[cat] ?? 0) + 1;
   }
   const favoriteCategory =
     Object.entries(categoryCount).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null;
 
-  // Current streak — consecutive days from today backwards
   const daysSet = new Set(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (data as any[])
@@ -128,7 +132,6 @@ export async function getMemberStats(
     }
   }
 
-  // Weekly data: last 8 weeks
   const weeklyData = buildWeeklyData(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (data as any[]).map((s) => s.completed_at).filter(Boolean)
@@ -151,15 +154,14 @@ export async function getTenantStats(tenantId: string): Promise<TenantStats> {
   const client = await createServerSupabaseClient();
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const weekStart = getWeekStart();
-  const monthStart = getMonthStart();
 
   const [membersRes, todayRes, weekRes, monthRes] = await Promise.all([
+    // V2: count from members table
     client
-      .from("profiles")
+      .from("members")
       .select("id", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("role", "member"),
+      .eq("gym_id", tenantId)
+      .eq("status", "active"),
     client
       .from("workout_sessions")
       .select("id", { count: "exact", head: true })
@@ -170,12 +172,12 @@ export async function getTenantStats(tenantId: string): Promise<TenantStats> {
       .select("id", { count: "exact", head: true })
       .eq("tenant_id", tenantId)
       .eq("status", "completed")
-      .gte("started_at", weekStart),
+      .gte("started_at", getWeekStart()),
     client
       .from("workout_sessions")
       .select("status")
       .eq("tenant_id", tenantId)
-      .gte("started_at", monthStart),
+      .gte("started_at", getMonthStart()),
   ]);
 
   const totalStarted = monthRes.data?.length ?? 0;
@@ -203,27 +205,14 @@ export async function getTenantRecentSessions(
   const client = await createServerSupabaseClient();
   const { data, error } = await client
     .from("workout_sessions")
-    .select("*, workouts(title, category, difficulty)")
+    .select("*, workout_templates(title, category, difficulty)")
     .eq("tenant_id", tenantId)
     .eq("status", "completed")
     .order("completed_at", { ascending: false })
     .limit(limit);
 
   if (error || !data) return [];
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return data.map((row: any) => ({
-    id: row.id,
-    workoutId: row.workout_id,
-    workoutTitle: row.workouts?.title ?? "Unknown Workout",
-    workoutCategory: row.workouts?.category ?? "",
-    workoutDifficulty: row.workouts?.difficulty ?? "beginner",
-    startedAt: row.started_at,
-    completedAt: row.completed_at,
-    status: row.status,
-    completionPercent: row.completion_percent,
-    totalDurationSeconds: row.total_duration_seconds,
-  }));
+  return data.map(mapSession);
 }
 
 // ─── getTenantMembers ─────────────────────────────────────────────────────────
@@ -241,11 +230,10 @@ export async function getTenantMembers(tenantId: string): Promise<MemberRow[]> {
 
   const client = await createServerSupabaseClient();
   const { data, error } = await client
-    .from("profiles")
-    .select("id, full_name, avatar_url, role, created_at")
-    .eq("tenant_id", tenantId)
-    .eq("role", "member")
-    .order("created_at", { ascending: false });
+    .from("members")
+    .select("id, full_name, photo_url, status, joined_at")
+    .eq("gym_id", tenantId)
+    .order("joined_at", { ascending: false });
 
   if (error || !data) return [];
 
@@ -253,9 +241,9 @@ export async function getTenantMembers(tenantId: string): Promise<MemberRow[]> {
   return data.map((row: any) => ({
     id: row.id,
     fullName: row.full_name,
-    avatarUrl: row.avatar_url,
-    role: row.role,
-    createdAt: row.created_at,
+    avatarUrl: row.photo_url,
+    role: "member",
+    createdAt: row.joined_at,
   }));
 }
 
@@ -275,7 +263,7 @@ export interface TenantAnalyticsData {
   completionRate: number;
   activeThisMonth: number;
   activePrevMonth: number;
-  retentionChange: number; // percentage points vs previous month
+  retentionChange: number;
   popularWorkouts: PopularWorkout[];
   weeklyData: { week: string; count: number }[];
 }
@@ -300,14 +288,12 @@ export async function getTenantAnalyticsData(
   const now = new Date();
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const prevMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-  // All sessions for the tenant (last 90 days for performance)
   const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
   const [sessionsRes, prevMonthRes] = await Promise.all([
     client
       .from("workout_sessions")
-      .select("id, member_id, status, started_at, completed_at, total_duration_seconds, workouts(id, title, category)")
+      .select("id, member_id, status, started_at, completed_at, total_duration_seconds, workout_template_id, workout_templates(id, title, category)")
       .eq("tenant_id", tenantId)
       .gte("started_at", ninetyDaysAgo.toISOString())
       .order("started_at", { ascending: false }),
@@ -341,25 +327,15 @@ export async function getTenantAnalyticsData(
   const retentionChange =
     activePrevMonth > 0
       ? Math.round(((activeThisMonth - activePrevMonth) / activePrevMonth) * 100)
-      : activeThisMonth > 0
-        ? 100  // new gym: went from 0 → N, treat as +100%
-        : 0;
+      : activeThisMonth > 0 ? 100 : 0;
 
-  // Popular workouts — group by workout_id
-  const workoutMap: Record<
-    string,
-    { title: string; category: string; total: number; done: number }
-  > = {};
+  const workoutMap: Record<string, { title: string; category: string; total: number; done: number }> = {};
   for (const s of sessions) {
-    const wid = s.workouts?.id ?? s.workout_id;
+    const wt = s.workout_templates;
+    const wid = wt?.id ?? s.workout_template_id ?? s.workout_id;
     if (!wid) continue;
     if (!workoutMap[wid]) {
-      workoutMap[wid] = {
-        title: s.workouts?.title ?? "Unknown",
-        category: s.workouts?.category ?? "",
-        total: 0,
-        done: 0,
-      };
+      workoutMap[wid] = { title: wt?.title ?? "Unknown", category: wt?.category ?? "", total: 0, done: 0 };
     }
     workoutMap[wid].total++;
     if (s.status === "completed") workoutMap[wid].done++;
@@ -379,16 +355,7 @@ export async function getTenantAnalyticsData(
     completed.map((s) => s.completed_at).filter(Boolean)
   );
 
-  return {
-    totalSessions,
-    totalMinutes,
-    completionRate,
-    activeThisMonth,
-    activePrevMonth,
-    retentionChange,
-    popularWorkouts,
-    weeklyData,
-  };
+  return { totalSessions, totalMinutes, completionRate, activeThisMonth, activePrevMonth, retentionChange, popularWorkouts, weeklyData };
 }
 
 // ─── getTenantMembersWithStats ────────────────────────────────────────────────
@@ -397,6 +364,11 @@ export interface MemberRowEnriched extends MemberRow {
   sessionCount: number;
   lastActiveAt: string | null;
   segment: "active" | "inactive" | "new";
+  // V2 extras
+  phone: string | null;
+  email: string | null;
+  status: string;
+  memberCode: string | null;
 }
 
 export async function getTenantMembersWithStats(
@@ -406,13 +378,12 @@ export async function getTenantMembersWithStats(
 
   const client = await createServerSupabaseClient();
 
-  const [profilesRes, sessionsRes] = await Promise.all([
+  const [membersRes, sessionsRes] = await Promise.all([
     client
-      .from("profiles")
-      .select("id, full_name, avatar_url, role, created_at")
-      .eq("tenant_id", tenantId)
-      .eq("role", "member")
-      .order("created_at", { ascending: false }),
+      .from("members")
+      .select("id, full_name, photo_url, phone, email, status, member_code, joined_at")
+      .eq("gym_id", tenantId)
+      .order("joined_at", { ascending: false }),
     client
       .from("workout_sessions")
       .select("member_id, completed_at, status")
@@ -422,7 +393,7 @@ export async function getTenantMembersWithStats(
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const profiles: any[] = profilesRes.data ?? [];
+  const members: any[] = membersRes.data ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sessions: any[] = sessionsRes.data ?? [];
 
@@ -430,7 +401,6 @@ export async function getTenantMembersWithStats(
   const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-  // Build per-member session map
   const memberSessions: Record<string, { count: number; lastAt: string | null }> = {};
   for (const s of sessions) {
     if (!memberSessions[s.member_id]) {
@@ -442,11 +412,11 @@ export async function getTenantMembersWithStats(
     }
   }
 
-  return profiles.map((p) => {
-    const ms = memberSessions[p.id];
+  return members.map((m) => {
+    const ms = memberSessions[m.id];
     const sessionCount = ms?.count ?? 0;
     const lastActiveAt = ms?.lastAt ?? null;
-    const joinedAt = new Date(p.created_at);
+    const joinedAt = new Date(m.joined_at);
 
     let segment: "active" | "inactive" | "new" = "inactive";
     if (joinedAt >= thirtyDaysAgo) {
@@ -456,11 +426,15 @@ export async function getTenantMembersWithStats(
     }
 
     return {
-      id: p.id,
-      fullName: p.full_name,
-      avatarUrl: p.avatar_url,
-      role: p.role,
-      createdAt: p.created_at,
+      id: m.id,
+      fullName: m.full_name,
+      avatarUrl: m.photo_url,
+      role: "member",
+      createdAt: m.joined_at,
+      phone: m.phone,
+      email: m.email,
+      status: m.status,
+      memberCode: m.member_code,
       sessionCount,
       lastActiveAt,
       segment,
@@ -487,15 +461,16 @@ export async function getAllTenantsWithStats(): Promise<TenantSummaryEnriched[]>
 
   const client = await createServerSupabaseClient();
 
-  const [tenantsRes, profilesRes, sessionsRes] = await Promise.all([
+  const [tenantsRes, membersRes, sessionsRes] = await Promise.all([
     client
       .from("tenants")
       .select("id, name, slug, subscription_plan, subscription_status, is_active, created_at")
       .order("created_at", { ascending: false }),
+    // V2: count from members table
     client
-      .from("profiles")
-      .select("id, tenant_id")
-      .eq("role", "member"),
+      .from("members")
+      .select("id, gym_id")
+      .eq("status", "active"),
     client
       .from("workout_sessions")
       .select("id, tenant_id")
@@ -505,12 +480,12 @@ export async function getAllTenantsWithStats(): Promise<TenantSummaryEnriched[]>
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const tenants: any[] = tenantsRes.data ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const profiles: any[] = profilesRes.data ?? [];
+  const membersList: any[] = membersRes.data ?? [];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sessions: any[] = sessionsRes.data ?? [];
 
   const memberCounts: Record<string, number> = {};
-  for (const p of profiles) memberCounts[p.tenant_id] = (memberCounts[p.tenant_id] ?? 0) + 1;
+  for (const m of membersList) memberCounts[m.gym_id] = (memberCounts[m.gym_id] ?? 0) + 1;
 
   const sessionCounts: Record<string, number> = {};
   for (const s of sessions) sessionCounts[s.tenant_id] = (sessionCounts[s.tenant_id] ?? 0) + 1;
@@ -561,7 +536,8 @@ export async function getAllTenants(): Promise<TenantSummary[]> {
   }));
 }
 
-// ─── getMemberHeatmapData ──────────────────────────────────────────────────
+// ─── getMemberHeatmapData ─────────────────────────────────────────────────────
+
 export async function getMemberHeatmapData(
   memberId: string,
   tenantId: string
@@ -586,6 +562,7 @@ export async function getMemberHeatmapData(
 }
 
 // ─── getGymLeaderboard ────────────────────────────────────────────────────────
+
 export interface LeaderboardEntry {
   profileId: string;
   fullName: string | null;
@@ -601,13 +578,14 @@ export async function getGymLeaderboard(
 
   const client = await createServerSupabaseClient();
 
-  // Get all members and their completed sessions
-  const [profilesRes, sessionsRes] = await Promise.all([
+  const [membersRes, sessionsRes] = await Promise.all([
+    // profile_id links member row → auth user (workout_sessions.member_id = auth user id)
     client
-      .from("profiles")
-      .select("id, full_name, avatar_url")
-      .eq("tenant_id", tenantId)
-      .eq("role", "member"),
+      .from("members")
+      .select("id, full_name, photo_url, profile_id")
+      .eq("gym_id", tenantId)
+      .eq("status", "active")
+      .not("profile_id", "is", null),
     client
       .from("workout_sessions")
       .select("member_id, completed_at")
@@ -616,26 +594,21 @@ export async function getGymLeaderboard(
       .order("completed_at", { ascending: false }),
   ]);
 
-  if (!profilesRes.data || !sessionsRes.data) return [];
+  if (!membersRes.data || !sessionsRes.data) return [];
 
-  const profiles = profilesRes.data;
-  const sessions = sessionsRes.data;
-
-  // Group sessions by member
+  // Key sessions by auth user id (= profile_id on member row)
   const memberSessions: Record<string, Set<string>> = {};
-  for (const s of sessions) {
+  for (const s of sessionsRes.data) {
     if (!s.completed_at) continue;
     if (!memberSessions[s.member_id]) memberSessions[s.member_id] = new Set();
     memberSessions[s.member_id].add(new Date(s.completed_at).toISOString().split("T")[0]);
   }
 
-  // Calculate streak for each member
-  const leaderboard: LeaderboardEntry[] = profiles.map((p) => {
-    const daysSet = memberSessions[p.id] || new Set();
+  const leaderboard: LeaderboardEntry[] = membersRes.data.map((m) => {
+    // match via profile_id (auth UID) → workout_sessions.member_id
+    const daysSet = memberSessions[m.profile_id] || new Set();
     let streak = 0;
     const today = new Date();
-    
-    // Streak logic (consistent with getMemberStats)
     for (let i = 0; i < 365; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
@@ -646,23 +619,16 @@ export async function getGymLeaderboard(
         break;
       }
     }
-    
-    return {
-      profileId: p.id,
-      fullName: p.full_name,
-      avatarUrl: p.avatar_url,
-      streak,
-    };
+    return { profileId: m.id, fullName: m.full_name, avatarUrl: m.photo_url, streak };
   });
 
   return leaderboard
     .sort((a, b) => b.streak - a.streak)
-    .filter(entry => entry.streak > 0)
+    .filter((e) => e.streak > 0)
     .slice(0, limit);
 }
 
 // ─── Utilities ────────────────────────────────────────────────────────────────
-
 
 function getWeekStart(): string {
   const d = new Date();
@@ -684,9 +650,8 @@ function emptyWeeklyData(): { week: string; count: number }[] {
 
 function buildWeeklyData(dates: string[]): { week: string; count: number }[] {
   const weeks: { week: string; count: number }[] = [];
-  // Snap to Monday of the current week (ISO week start)
   const now = new Date();
-  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1; // Mon=0 … Sun=6
+  const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
   const thisMonday = new Date(now);
   thisMonday.setDate(now.getDate() - dayOfWeek);
   thisMonday.setHours(0, 0, 0, 0);

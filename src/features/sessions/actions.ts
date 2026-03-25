@@ -33,6 +33,7 @@ export async function saveWorkoutSession(
       tenant_id: input.tenantId,
       member_id: user.id,
       workout_id: input.workoutId,
+      workout_template_id: input.workoutId, // V2: same UUID, template table FK
       started_at: input.startedAt,
       completed_at: new Date().toISOString(),
       status: "completed",

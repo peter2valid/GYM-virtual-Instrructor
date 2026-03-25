@@ -1,4 +1,4 @@
-import { getTenantBySlug } from "@/features/tenants/queries";
+import { getTenantBySlug, getFeatureFlagsForTenant } from "@/features/tenants/queries";
 import { hexToHslComponents } from "@/lib/utils/color";
 import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { GymBottomNav } from "@/components/gym/GymBottomNav";
@@ -12,6 +12,10 @@ export default async function GymLayout({ children, params }: GymLayoutProps) {
   const { gymSlug } = await params;
   const tenant = await getTenantBySlug(gymSlug);
 
+  const [flags] = await Promise.all([
+    tenant ? getFeatureFlagsForTenant(tenant.id) : Promise.resolve(null),
+  ]);
+
   // Apply custom primary color if the tenant has one configured
   const hsl = tenant?.primaryColor ? hexToHslComponents(tenant.primaryColor) : null;
 
@@ -22,8 +26,11 @@ export default async function GymLayout({ children, params }: GymLayoutProps) {
       )}
       {children}
       <PwaInstallBanner />
-      {/* App-style bottom navigation — hides itself on session pages */}
-      <GymBottomNav gymSlug={gymSlug} />
+      <GymBottomNav
+        gymSlug={gymSlug}
+        showProgress={flags?.workout_history ?? true}
+        showMe={flags?.member_dashboard ?? true}
+      />
     </div>
   );
 }

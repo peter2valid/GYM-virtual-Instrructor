@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getAuthUser } from "@/features/auth/actions";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { getAllTenants } from "@/features/sessions/queries";
@@ -64,7 +65,9 @@ export default async function SuperAdminDashboard() {
           {tenants.slice(0, 5).map((t) => (
             <div key={t.id} className="flex items-center justify-between px-4 py-3">
               <div>
-                <p className="text-sm font-medium text-foreground">{t.name}</p>
+                <Link href={`/super-admin/gyms/${t.id}`} className="text-sm font-medium text-foreground hover:underline underline-offset-4">
+                  {t.name}
+                </Link>
                 <p className="text-xs text-muted-foreground">/g/{t.slug}</p>
               </div>
               <div className="flex items-center gap-3">

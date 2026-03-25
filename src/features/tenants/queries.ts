@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { mockTenants } from "./mock-tenants";
@@ -110,7 +111,7 @@ export async function getTenantSettings(
 
 // ─── getFeatureFlagsForTenant ─────────────────────────────────────────────────
 
-export async function getFeatureFlagsForTenant(
+export const getFeatureFlagsForTenant = cache(async function getFeatureFlagsForTenant(
   tenantId: string
 ): Promise<Record<FeatureFlagKey, boolean>> {
   const defaults: Record<FeatureFlagKey, boolean> = {
@@ -141,7 +142,7 @@ export async function getFeatureFlagsForTenant(
     }
   }
   return flags;
-}
+});
 
 // ─── getTenantEquipmentProfile ────────────────────────────────────────────────
 

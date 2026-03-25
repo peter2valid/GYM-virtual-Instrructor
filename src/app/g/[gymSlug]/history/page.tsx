@@ -1,7 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { getTenantBySlug } from "@/features/tenants/queries";
+import { getTenantBySlug, getFeatureFlagsForTenant } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
 import { getSessionHistory } from "@/features/sessions/queries";
 import type { SessionWithWorkout } from "@/features/sessions/queries";
@@ -22,6 +22,9 @@ export default async function HistoryPage({ params }: Props) {
   ]);
 
   if (!tenant) notFound();
+
+  const flags = await getFeatureFlagsForTenant(tenant.id);
+  if (!flags.workout_history) redirect(`/g/${gymSlug}`);
 
   const sessions = user ? await getSessionHistory(user.id, tenant.id) : [];
 

@@ -90,22 +90,21 @@ async function AttendanceStats({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   client: any;
 }) {
-  const today = new Date().toISOString().split("T")[0];
-  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
   const [{ count: todayCount }, { count: weekCount }] = await Promise.all([
     client
-      .from("attendance_logs")
+      .from("attendance_checkins")
       .select("*", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .eq("attendance_date", today),
+      .eq("gym_id", tenantId)
+      .gte("checkin_at", todayStart.toISOString()),
     client
-      .from("attendance_logs")
+      .from("attendance_checkins")
       .select("*", { count: "exact", head: true })
-      .eq("tenant_id", tenantId)
-      .gte("attendance_date", sevenDaysAgo),
+      .eq("gym_id", tenantId)
+      .gte("checkin_at", sevenDaysAgo),
   ]);
 
   return (

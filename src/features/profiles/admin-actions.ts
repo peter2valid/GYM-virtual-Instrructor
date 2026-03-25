@@ -21,9 +21,11 @@ const adminAuthClient = createClient(supabaseUrl, supabaseServiceKey, {
 export async function createMemberAccount({
   email,
   fullName,
+  phone,
 }: {
   email: string;
   fullName: string;
+  phone?: string;
 }) {
   const user = await getAuthUser();
   if (!user) return { error: "Not authenticated" };
@@ -60,7 +62,7 @@ export async function createMemberAccount({
     return { error: "Failed to create user." };
   }
 
-  // 2. Upsert profile table
+  // 2. Upsert profiles table
   const { error: profileError } = await adminAuthClient.from("profiles").upsert({
     id: authData.user.id,
     full_name: fullName,
@@ -69,9 +71,28 @@ export async function createMemberAccount({
   });
 
   if (profileError) {
-    // Note: If this fails, we hold an auth user without a proper profile.
     console.error("Failed to upsert profile:", profileError);
     return { error: "User created but profile linking failed." };
+  }
+
+  // 3. Insert into V2 members table
+  const parts = fullName.trim().split(/\s+/);
+  const firstName = parts[0] ?? fullName;
+  const lastName = parts.slice(1).join(" ") || firstName;
+
+  const { error: memberError } = await adminAuthClient.from("members").insert({
+    gym_id: profile.tenant_id,
+    profile_id: authData.user.id,
+    first_name: firstName,
+    last_name: lastName,
+    email,
+    phone: phone ?? null,
+    status: "active",
+  });
+
+  if (memberError) {
+    // Non-fatal — profile exists; member row can be reconciled
+    console.error("Failed to insert member row:", memberError);
   }
 
   revalidatePath("/gym-admin/members");

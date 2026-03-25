@@ -9,6 +9,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { createBrowserSupabaseClient } from "@/lib/supabase";
 import { ROUTES } from "@/lib/constants";
+import { reconcileAfterPhoneAuth } from "@/features/auth/reconcile";
 
 const emailSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -94,8 +95,10 @@ export function SignupForm({ gymName }: SignupFormProps) {
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.verifyOtp({ phone: data.phone, token: data.otp, type: "sms" });
+    if (error) { setLoading(false); setError(error.message); return; }
+    // Reconcile profiles + members after phone auth (no callback redirect for OTP)
+    await reconcileAfterPhoneAuth(gymSlug ?? undefined);
     setLoading(false);
-    if (error) { setError(error.message); return; }
     window.location.href = next;
   }
 

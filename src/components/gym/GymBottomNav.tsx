@@ -7,9 +7,11 @@ import { cn } from "@/lib/utils/cn";
 
 interface Props {
   gymSlug: string;
+  showProgress?: boolean;
+  showMe?: boolean;
 }
 
-export function GymBottomNav({ gymSlug }: Props) {
+export function GymBottomNav({ gymSlug, showProgress = true, showMe = true }: Props) {
   const pathname = usePathname();
 
   const tabs = [
@@ -18,26 +20,30 @@ export function GymBottomNav({ gymSlug }: Props) {
       label: "Home",
       icon: Home,
       exact: true,
+      show: true,
     },
     {
       href: `/g/${gymSlug}/workouts`,
       label: "Workouts",
       icon: Dumbbell,
       exact: false,
+      show: true,
     },
     {
       href: `/g/${gymSlug}/progress`,
       label: "Progress",
       icon: TrendingUp,
       exact: false,
+      show: showProgress,
     },
     {
       href: `/g/${gymSlug}/me`,
       label: "Me",
       icon: User,
       exact: false,
+      show: showMe,
     },
-  ];
+  ].filter((t) => t.show);
 
   // Hide on session pages and workout detail pages — full-screen / pre-start experience
   if (pathname.includes("/session")) return null;
