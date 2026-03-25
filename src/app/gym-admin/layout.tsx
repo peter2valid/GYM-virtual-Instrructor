@@ -8,6 +8,7 @@ import { redirect } from "next/navigation";
 
 const navItems = [
   { href: ROUTES.GYM_ADMIN, label: "Dashboard" },
+  { href: ROUTES.GYM_ADMIN_SCANNER, label: "Scanner", shortLabel: "Scan" },
   { href: ROUTES.GYM_ADMIN_MEMBERS, label: "Members" },
   { href: ROUTES.GYM_ADMIN_WORKOUTS, label: "Workouts" },
   { href: ROUTES.GYM_ADMIN_ANALYTICS, label: "Analytics" },

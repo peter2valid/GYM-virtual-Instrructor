@@ -23,5 +23,6 @@ export const ROUTES = {
   GYM_ATTEND: (slug: string) => `/g/${slug}/attend`,
   GYM_ADMIN_QR: "/gym-admin/qr",
   GYM_ADMIN_ATTENDANCE: "/gym-admin/attendance",
+  GYM_ADMIN_SCANNER: "/gym-admin/scanner",
   GYM_ME: (slug: string) => `/g/${slug}/me`,
 } as const;

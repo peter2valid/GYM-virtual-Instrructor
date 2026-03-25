@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { getAuthUser } from "@/features/auth/actions";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 import { getCheckins, getCheckinsCountByDay } from "@/features/members/queries";
+import { ROUTES } from "@/lib/constants";
 
 export const metadata = { title: "Attendance" };
 
@@ -41,9 +43,17 @@ export default async function GymAdminAttendancePage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
-        <p className="text-sm text-muted-foreground">QR check-ins from the last 30 days.</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Attendance</h1>
+          <p className="text-sm text-muted-foreground">QR check-ins from the last 30 days.</p>
+        </div>
+        <Link
+          href={ROUTES.GYM_ADMIN_SCANNER}
+          className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 transition-opacity shrink-0"
+        >
+          Open Scanner
+        </Link>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
