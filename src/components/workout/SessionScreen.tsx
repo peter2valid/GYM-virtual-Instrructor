@@ -204,44 +204,43 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
 
               {/* ── Interaction Area ─────────────────────────────── */}
               {hasTimer ? (
-                /* TIMER STEPS: preview → timer */
                 <AnimatePresence mode="wait">
                   {!timerStarted ? (
-                    /* Preview: show duration + START NOW */
+                    /* ── READY state: START above duration ── */
                     <motion.div
                       key="preview"
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8, scale: 0.97 }}
                       transition={{ duration: 0.2 }}
-                      className="flex flex-col items-center gap-6 pt-2"
+                      className="flex flex-col items-center gap-4 pt-2"
                     >
-                      {/* Duration bubble */}
-                      <div className="flex flex-col items-center gap-1 rounded-[2rem] bg-card ring-1 ring-border/40 shadow-badge px-10 py-5">
-                        <span className="text-[4rem] font-black tabular-nums tracking-tighter leading-none text-foreground">
+                      {/* ① START button — positioned ABOVE the timer */}
+                      <button
+                        onClick={() => { haptic.tap(); setTimerStarted(true); }}
+                        className="tap-bounce flex h-16 w-full items-center justify-center gap-3 rounded-[1.25rem] bg-primary text-[15px] font-black tracking-widest text-primary-foreground shadow-[0_8px_32px_-4px] shadow-primary/40 transition-all hover:-translate-y-0.5 active:scale-[0.97]"
+                      >
+                        <Play className="h-6 w-6 fill-current" />
+                        START
+                      </button>
+
+                      {/* ② Duration display — below the button */}
+                      <div className="flex w-full flex-col items-center gap-1 rounded-2xl bg-card ring-1 ring-border/30 shadow-sm py-5">
+                        <span className="text-[3.5rem] font-black tabular-nums tracking-tighter leading-none text-foreground">
                           {fmtDuration(currentStep.durationSeconds!)}
                         </span>
-                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/40">
                           {currentStep.durationSeconds! >= 60 ? "minutes" : "seconds"}
                         </span>
                       </div>
-
-                      {/* START NOW button */}
-                      <button
-                        onClick={() => { haptic.tap(); setTimerStarted(true); }}
-                        className="tap-bounce flex h-16 w-full items-center justify-center gap-3 rounded-[1.25rem] bg-primary text-[15px] font-black tracking-wide text-primary-foreground shadow-pill shadow-primary/30 transition-all hover:-translate-y-0.5"
-                      >
-                        <Play className="h-6 w-6 fill-current" />
-                        START NOW
-                      </button>
                     </motion.div>
                   ) : (
-                    /* Timer running */
+                    /* ── RUNNING state: full timer ── */
                     <motion.div
                       key="timer"
                       initial={{ opacity: 0, scale: 0.96 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      transition={{ duration: 0.35, ease: "easeOut" }}
+                      transition={{ duration: 0.3, ease: "easeOut" }}
                     >
                       <WorkoutTimer
                         key={`timer-${stepIndex}`}
@@ -253,18 +252,24 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
                   )}
                 </AnimatePresence>
               ) : (
-                /* REPS/SETS STEPS: just show the counts */
-                <div className="grid grid-cols-2 gap-4 py-2">
+                /* ── REPS / SETS steps ── */
+                <div className="grid grid-cols-2 gap-3 py-1">
                   {currentStep.reps !== null && (
-                    <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
+                    <div className="rounded-2xl bg-card p-5 text-center ring-1 ring-border/30 shadow-sm">
                       <p className="text-4xl font-black text-foreground">{currentStep.reps}</p>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Reps</p>
+                      <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Reps</p>
                     </div>
                   )}
                   {currentStep.sets !== null && (
-                    <div className="rounded-3xl bg-secondary/50 p-6 text-center ring-1 ring-border/50">
+                    <div className="rounded-2xl bg-card p-5 text-center ring-1 ring-border/30 shadow-sm">
                       <p className="text-4xl font-black text-foreground">{currentStep.sets}</p>
-                      <p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground/60">Sets</p>
+                      <p className="mt-1 text-[10px] font-black uppercase tracking-widest text-muted-foreground/50">Sets</p>
+                    </div>
+                  )}
+                  {currentStep.restSeconds !== null && (
+                    <div className={cn("rounded-2xl bg-muted/40 p-4 text-center ring-1 ring-border/20", currentStep.reps === null && currentStep.sets === null && "col-span-2")}>
+                      <p className="text-2xl font-black text-muted-foreground/60">{currentStep.restSeconds}s</p>
+                      <p className="mt-0.5 text-[10px] font-black uppercase tracking-widest text-muted-foreground/40">Rest</p>
                     </div>
                   )}
                 </div>

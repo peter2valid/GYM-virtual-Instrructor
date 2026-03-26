@@ -52,9 +52,31 @@ export function WorkoutTimer({
   }
 
   return (
-    <div className="flex flex-col items-center justify-center py-6">
-      {/* Timer Container with pulsing effect when running */}
-      <div className="relative flex h-64 w-64 items-center justify-center">
+    <div className="flex flex-col items-center justify-center gap-5 py-2">
+      {/* ── Play / Pause / Done button — ABOVE the ring ── */}
+      <button
+        onClick={handleToggle}
+        disabled={isDone}
+        className={cn(
+          "flex h-16 w-full max-w-xs items-center justify-center gap-3 rounded-[1.25rem] text-[15px] font-black tracking-widest transition-all shadow-xl active:scale-[0.97]",
+          isDone
+            ? "bg-muted text-muted-foreground/40 cursor-default"
+            : isRunning
+            ? "bg-card ring-1 ring-border text-foreground hover:-translate-y-0.5"
+            : "bg-primary text-primary-foreground shadow-primary/30 hover:-translate-y-0.5"
+        )}
+      >
+        {isDone ? (
+          "✓  Done!"
+        ) : isRunning ? (
+          <><Pause className="h-5 w-5 fill-current" />PAUSE</>
+        ) : (
+          <><Play className="ml-0.5 h-5 w-5 fill-current" />RESUME</>
+        )}
+      </button>
+
+      {/* ── Timer ring ── */}
+      <div className="relative flex h-56 w-56 items-center justify-center">
         {/* Pulsing glow — sits below everything via DOM order */}
         <AnimatePresence>
           {isRunning && (
@@ -70,8 +92,7 @@ export function WorkoutTimer({
 
         {/* SVG Ring — the anchor plate circle lives INSIDE the SVG so it
             is painted behind the rings but above the background */}
-        <svg className="h-full w-full -rotate-90 transform overflow-visible">
-          {/* Anchor plate: r=80 sits inside the ring (r=90) and adapts to theme */}
+        <svg viewBox="0 0 256 256" className="h-full w-full -rotate-90 overflow-visible">
           <circle cx="128" cy="128" r="80" className="fill-card" />
           {/* Background Ring */}
           <circle
@@ -100,69 +121,42 @@ export function WorkoutTimer({
           />
         </svg>
 
-        {/* Central Display */}
-        <button
-          onClick={handleToggle}
-          disabled={isDone}
-          className={cn(
-            "absolute inset-0 flex flex-col items-center justify-center rounded-full transition-all active:scale-95",
-            isDone ? "cursor-default" : "cursor-pointer"
-          )}
-        >
+        {/* Central Display — time only, no tap target */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center rounded-full pointer-events-none">
           <motion.span
             key={display}
-            initial={{ scale: 0.9, opacity: 0.5 }}
+            initial={{ scale: 0.92, opacity: 0.5 }}
             animate={{ scale: 1, opacity: 1 }}
             className={cn(
-              "text-[5rem] font-black tabular-nums tracking-tighter leading-none",
+              "text-[4.5rem] font-black tabular-nums tracking-tighter leading-none",
               isDone ? "text-muted-foreground/30" : "text-foreground"
             )}
           >
             {display}
           </motion.span>
-          <p className="mt-1 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60">
-            {isDone ? "Done!" : isRunning ? "Pause" : "Start"}
+          <p className="mt-1 text-[9px] font-black uppercase tracking-widest text-muted-foreground/40">
+            {isDone ? "Complete" : "seconds"}
           </p>
-        </button>
+        </div>
       </div>
 
-      {/* Control Buttons */}
-      <div className="mt-6 flex items-center gap-6">
-        <button
-          onClick={reset}
-          className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground active:scale-90"
-          aria-label="Reset"
-        >
-          <RotateCcw className="h-5 w-5" />
-        </button>
-
-        <button
-          onClick={handleToggle}
-          disabled={isDone}
-          className={cn(
-            "flex h-20 w-20 items-center justify-center rounded-full transition-all shadow-xl",
-            isDone
-              ? "bg-muted opacity-30 cursor-not-allowed"
-              : "bg-primary text-primary-foreground hover:scale-105 active:scale-95 hover:shadow-primary/20"
-          )}
-        >
-          {isRunning ? (
-            <Pause className="h-8 w-8 fill-current" />
-          ) : (
-            <Play className="ml-1 h-8 w-8 fill-current" />
-          )}
-        </button>
-
-        <div className="w-12" aria-hidden /> {/* Spacer for symmetry */}
-      </div>
+      {/* Reset button — below ring */}
+      <button
+        onClick={reset}
+        className="flex h-10 items-center gap-2 rounded-xl px-4 text-[12px] font-bold text-muted-foreground/50 transition-colors hover:text-muted-foreground active:scale-95"
+        aria-label="Reset timer"
+      >
+        <RotateCcw className="h-3.5 w-3.5" />
+        Reset
+      </button>
 
       {isDone && (
         <motion.p
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-6 font-bold text-primary"
+          className="text-sm font-bold text-primary"
         >
-          Great job! Take a breath.
+          Great job! Take a breath. 🔥
         </motion.p>
       )}
     </div>
