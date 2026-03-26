@@ -1,11 +1,14 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Search, X, Sparkles } from "lucide-react";
+import { Search, X, Sparkles, Dumbbell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { WorkoutCard } from "./WorkoutCard";
 import { CategoryPills } from "./CategoryPills";
 import { cn } from "@/lib/utils/cn";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useSearchExercises } from "@/lib/exercises/queries";
+import { exerciseLoopUrl } from "@/lib/exercises/url";
 import type { Workout, WorkoutCategory } from "@/types";
 
 interface WorkoutsListProps {
@@ -27,6 +30,8 @@ export function WorkoutsList({
   const [query, setQuery] = useState("");
 
   const q = query.trim().toLowerCase();
+  const debouncedQ = useDebounce(q, 300);
+  const { data: exerciseResults, isFetching: exercisesLoading } = useSearchExercises(debouncedQ);
 
   const filtered = useMemo(() => {
     return workouts.filter((w) => {
@@ -44,6 +49,8 @@ export function WorkoutsList({
   const showFeatured = activeCategory === "All" && !q && filtered.length > 0;
   const featured = showFeatured ? filtered[0] : null;
   const standardList = showFeatured ? filtered.slice(1) : filtered;
+
+  const showExercises = debouncedQ.length >= 2 && (exerciseResults?.length ?? 0) > 0;
 
   return (
     <div className="space-y-10">
@@ -136,6 +143,56 @@ export function WorkoutsList({
             </div>
           )}
         </motion.div>
+      </AnimatePresence>
+
+      {/* ── Exercise Library Results ─────────────────────────────── */}
+      <AnimatePresence>
+        {(showExercises || (debouncedQ.length >= 2 && exercisesLoading)) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-4"
+          >
+            <h2 className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+              <Dumbbell className="h-3 w-3" />
+              Exercise Library
+              {exercisesLoading && (
+                <span className="ml-1 h-3 w-3 animate-spin rounded-full border-2 border-muted-foreground/20 border-t-muted-foreground/60 inline-block" />
+              )}
+            </h2>
+
+            <div className="space-y-2">
+              {exerciseResults?.map((ex) => (
+                <div
+                  key={ex.id}
+                  className="flex items-center gap-3 rounded-2xl bg-card p-3 shadow-badge ring-1 ring-border/5"
+                >
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-muted">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={exerciseLoopUrl(ex.source_id)}
+                      alt={ex.name}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[14px] font-black text-foreground">{ex.name}</p>
+                    <p className="mt-0.5 text-[11px] font-bold uppercase tracking-wide text-muted-foreground/50">
+                      {ex.category}
+                      {ex.primary_muscles.length > 0 && ` · ${ex.primary_muscles.slice(0, 2).join(", ")}`}
+                    </p>
+                  </div>
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground/50">
+                    {ex.level}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
       </AnimatePresence>
     </div>
   );

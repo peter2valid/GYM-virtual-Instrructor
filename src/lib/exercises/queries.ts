@@ -148,29 +148,62 @@ export function useWorkoutExercises(ids: string[]) {
 }
 
 /**
- * Debounced exercise search.
- * Pass a query string; hook skips fetching until q.length >= 2.
- * Results are cached per query string — same search = zero extra requests.
+ * Exercise search across name, category, equipment, and primary muscles.
+ * Pass a raw query string; hook skips fetching until q.length >= 2.
+ * Results are cached per query — same search = zero extra requests.
  */
 export function useSearchExercises(q: string) {
   return useQuery({
     queryKey: exerciseKeys.search(q),
     queryFn: async () => {
       const sb = createClient();
+      const escaped = q.replace(/[%_]/g, "\\$&");
+      const pat = `%${escaped}%`;
+
+      // OR across name, category, equipment. primary_muscles is searched client-side
+      // because PostgREST can't ilike array elements without unnest.
       const { data, error } = await sb
         .from("exercises")
-        .select("id, source_id, name, category, primary_muscles")
-        .ilike("name", `%${q}%`)
+        .select("id, source_id, name, category, level, equipment, primary_muscles")
+        .or(`name.ilike.${pat},category.ilike.${pat},equipment.ilike.${pat}`)
         .eq("is_active", true)
         .order("name")
-        .limit(10);
+        .limit(30);
 
       if (error) throw error;
-      return (data ?? []) as Pick<ExerciseRow, "id" | "source_id" | "name" | "category" | "primary_muscles">[];
+
+      const rows = (data ?? []) as Pick<
+        ExerciseRow,
+        "id" | "source_id" | "name" | "category" | "level" | "equipment" | "primary_muscles"
+      >[];
+
+      // Also surface exercises whose primary muscles match the query (client-side pass)
+      const ql = escaped.toLowerCase();
+      const byId = new Set(rows.map((r) => r.id));
+
+      // If the query looks like a muscle name, do a second fetch scoped to muscles
+      if (ql.length >= 3) {
+        const { data: muscleData } = await sb
+          .from("exercises")
+          .select("id, source_id, name, category, level, equipment, primary_muscles")
+          .contains("primary_muscles", [ql])
+          .eq("is_active", true)
+          .order("name")
+          .limit(20);
+
+        for (const row of muscleData ?? []) {
+          if (!byId.has(row.id)) {
+            rows.push(row as typeof rows[0]);
+            byId.add(row.id);
+          }
+        }
+      }
+
+      return rows;
     },
     enabled: q.trim().length >= 2,
-    staleTime: 10 * 60 * 1000, // search results fine for 10 min
+    staleTime: 10 * 60 * 1000,
     networkMode: "always",
-    placeholderData: (prev) => prev, // keep showing old results while typing
+    placeholderData: (prev) => prev,
   });
 }

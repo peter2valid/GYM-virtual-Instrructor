@@ -29,11 +29,8 @@ interface ExerciseDbRow {
 interface ExerciseMediaDbRow {
   id: string;
   exercise_id: string;
-  media_type: "gif" | "mp4" | "webm" | "image_pair";
-  media_url: string;
-  thumbnail_url: string | null;
-  anatomy_image_url: string | null;
-  source_name: string | null;
+  media_type: "loop_gif" | "demo_gif";
+  cdn_url: string;
   quality_score: number | null;
   is_preferred: boolean;
   created_at: string;
@@ -72,10 +69,7 @@ export function mapExerciseMediaRow(row: ExerciseMediaDbRow): ExerciseMedia {
     id: row.id,
     exerciseId: row.exercise_id,
     mediaType: row.media_type,
-    mediaUrl: row.media_url,
-    thumbnailUrl: row.thumbnail_url,
-    anatomyImageUrl: row.anatomy_image_url,
-    sourceName: row.source_name,
+    mediaUrl: row.cdn_url,
     qualityScore: row.quality_score,
     isPreferred: row.is_preferred,
     createdAt: row.created_at,
@@ -97,11 +91,7 @@ export function resolveExerciseMedia(
   preferredMedia: ExerciseMedia | null
 ): ResolvedExerciseMedia {
   if (preferredMedia) {
-    return {
-      url: preferredMedia.mediaUrl,
-      type: "preferred_map",
-      anatomyImageUrl: preferredMedia.anatomyImageUrl,
-    };
+    return { url: preferredMedia.mediaUrl, type: "preferred_map", anatomyImageUrl: null };
   }
   if (exercise.mediaLoopUrl) {
     return { url: exercise.mediaLoopUrl, type: "media_loop", anatomyImageUrl: null };

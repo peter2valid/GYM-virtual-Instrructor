@@ -58,7 +58,7 @@ export async function getPreferredMediaForExercise(
 
   const client = await createServerSupabaseClient();
   const { data, error } = await client
-    .from("exercise_media_map")
+    .from("exercise_media")
     .select("*")
     .eq("exercise_id", exerciseId)
     .eq("is_preferred", true)
@@ -80,7 +80,7 @@ export async function getPreferredMediaForExercises(
 
   const client = await createServerSupabaseClient();
   const { data, error } = await client
-    .from("exercise_media_map")
+    .from("exercise_media")
     .select("*")
     .in("exercise_id", exerciseIds)
     .eq("is_preferred", true);

@@ -24,11 +24,8 @@ export interface Exercise {
 export interface ExerciseMedia {
   id: string;
   exerciseId: string;
-  mediaType: "gif" | "mp4" | "webm" | "image_pair";
+  mediaType: "loop_gif" | "demo_gif";
   mediaUrl: string;
-  thumbnailUrl: string | null;
-  anatomyImageUrl: string | null;
-  sourceName: string | null;
   qualityScore: number | null;
   isPreferred: boolean;
   createdAt: string;
