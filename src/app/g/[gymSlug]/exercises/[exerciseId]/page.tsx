@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowLeft, Dumbbell, Zap, Target } from "lucide-react";
 import { getExerciseById } from "@/features/exercises/queries";
 import { exerciseLoopUrl, exerciseDemoUrl } from "@/lib/exercises/url";
+import { ExerciseGifDisplay } from "./ExerciseGifDisplay";
 
 interface Props {
   params: Promise<{ gymSlug: string; exerciseId: string }>;
@@ -44,19 +45,11 @@ export default async function ExerciseDetailPage({ params }: Props) {
 
       {/* ── GIF ──────────────────────────────────────────────────── */}
       <div className="w-full bg-muted aspect-[4/3] max-h-[320px] overflow-hidden">
-        {gifUrl ? (
+        {gifUrl && loopUrl ? (
+          <ExerciseGifDisplay demoUrl={gifUrl} loopUrl={loopUrl} name={exercise.name} />
+        ) : loopUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={gifUrl}
-            alt={exercise.name}
-            className="h-full w-full object-contain bg-muted"
-            onError={(e) => {
-              // fallback to loop gif if demo not available
-              if (loopUrl && e.currentTarget.src !== loopUrl) {
-                e.currentTarget.src = loopUrl;
-              }
-            }}
-          />
+          <img src={loopUrl} alt={exercise.name} className="h-full w-full object-contain bg-muted" />
         ) : (
           <div className="flex h-full w-full items-center justify-center">
             <Dumbbell className="h-16 w-16 text-muted-foreground/20" strokeWidth={1} />
