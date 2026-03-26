@@ -109,7 +109,7 @@
   }
 
   h2 {
-    @apply scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0;
+    @apply scroll-m-20 text-3xl font-semibold tracking-tight first:mt-0;
   }
 
   h3 {
@@ -121,7 +121,7 @@
   }
 
   p {
-    @apply leading-7 [&:not(:first-child)]:mt-6;
+    @apply leading-7;
   }
 
   blockquote {

@@ -308,17 +308,41 @@ export async function getFeaturedWorkoutsForTenant(
   }
 
   const client = await createServerSupabaseClient();
-  const { data, error } = await client
-    .from("workout_templates")
-    .select("*, workout_template_items(count)")
-    .eq("gym_id", tenantId)
-    .eq("is_featured", true)
-    .eq("is_published", true)
-    .order("created_at", { ascending: false })
-    .limit(count);
 
-  if (error || !data) return [];
-  return data.map((row) => mapWorkoutRow(row, []));
+  const [tenantResult, globalResult] = await Promise.all([
+    client
+      .from("workout_templates")
+      .select("*, workout_template_items(count)")
+      .eq("gym_id", tenantId)
+      .eq("is_featured", true)
+      .eq("is_published", true)
+      .order("created_at", { ascending: false })
+      .limit(count),
+    client
+      .from("workout_templates")
+      .select("*, workout_template_items(count)")
+      .is("gym_id", null)
+      .eq("is_featured", true)
+      .eq("is_published", true)
+      .order("created_at", { ascending: false })
+      .limit(count),
+  ]);
+
+  const combined = [
+    ...(tenantResult.data ?? []).map((row) => mapWorkoutRow(row, [])),
+    ...(globalResult.data ?? []).map((row) => mapWorkoutRow(row, [])),
+  ];
+
+  // Dedup by id and cap at requested count
+  const seen = new Set<string>();
+  const result: Workout[] = [];
+  for (const w of combined) {
+    if (!seen.has(w.id) && result.length < count) {
+      seen.add(w.id);
+      result.push(w);
+    }
+  }
+  return result;
 }
 
 // ─── getRecommendedWorkoutsForTenant ──────────────────────────────────────────

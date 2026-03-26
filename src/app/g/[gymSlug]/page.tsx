@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, Flame, Dumbbell } from "lucide-react";
+import { ArrowRight, Flame, Dumbbell, Search } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { getTenantBySlug, getFeatureFlagsForTenant } from "@/features/tenants/queries";
 import { getAuthUser } from "@/features/auth/actions";
@@ -123,6 +123,22 @@ export default async function GymLandingPage({ params }: Props) {
         
         {/* Placeholder for "Athletic" feel */}
         <Dumbbell className="absolute -right-4 bottom-8 h-40 w-40 -rotate-12 text-white/5" strokeWidth={1} />
+      </section>
+
+      {/* ── Quick Search / Browse Entry Point ──────────────────────────── */}
+      <section className="mb-10">
+        <Link
+          href={`/g/${gymSlug}/workouts`}
+          className="flex items-center gap-3 w-full rounded-[1.25rem] bg-card px-5 h-14 shadow-badge ring-1 ring-border/20 transition-all hover:ring-primary/30 hover:shadow-pill active:scale-[0.98]"
+        >
+          <Search className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+          <span className="flex-1 text-[14px] text-muted-foreground/50 font-medium">
+            Search exercises, muscles, goals…
+          </span>
+          <span className="rounded-full bg-primary/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-primary">
+            Browse
+          </span>
+        </Link>
       </section>
 
       {/* ── Continue Workout (if exists) ────────────────────────────────── */}

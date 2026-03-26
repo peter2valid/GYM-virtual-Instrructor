@@ -73,7 +73,7 @@ export function PwaInstallBanner() {
   if (!mode || dismissed || !visible || isWorkoutActive) return null;
 
   return (
-    <div className="fixed top-4 left-3 right-3 z-[100] mx-auto max-w-md animate-in slide-in-from-top-4 duration-300">
+    <div className="fixed bottom-6 left-3 right-3 z-[100] mx-auto max-w-md animate-in slide-in-from-bottom-4 duration-300">
       <div className="rounded-2xl border border-border bg-card shadow-2xl ring-1 ring-black/5">
 
         {/* Header row */}

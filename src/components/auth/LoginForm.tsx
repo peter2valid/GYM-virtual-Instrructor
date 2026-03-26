@@ -150,11 +150,11 @@ export function LoginForm({ gymName }: LoginFormProps) {
       <Tabs.Root value={tab} onValueChange={(v) => { setTab(v as "email" | "phone"); setError(null); setInfo(null); }}>
         <Tabs.List className="flex rounded-xl border border-border bg-muted/40 p-1">
           <Tabs.Trigger value="email"
-            className="flex-1 rounded-lg py-2 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            className="flex-1 rounded-lg py-2 text-sm font-medium text-muted-foreground outline-none transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
             Email
           </Tabs.Trigger>
           <Tabs.Trigger value="phone"
-            className="flex-1 rounded-lg py-2 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
+            className="flex-1 rounded-lg py-2 text-sm font-medium text-muted-foreground outline-none transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm">
             Phone
           </Tabs.Trigger>
         </Tabs.List>
