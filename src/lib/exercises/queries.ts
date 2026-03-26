@@ -49,6 +49,31 @@ export interface ExerciseDetail extends ExerciseRow {
 // ─── Hooks ────────────────────────────────────────────────────────────────────
 
 /**
+ * Loads ALL exercises into the TanStack Query cache in one shot.
+ * Call this on any page that will need exercise search — subsequent searches
+ * are instant client-side filtering with zero extra network requests.
+ */
+export function useAllExercises() {
+  return useQuery({
+    queryKey: ["exercises", "all"],
+    queryFn: async () => {
+      const sb = createClient();
+      const { data, error } = await sb
+        .from("exercises")
+        .select("id, source_id, name, category, level, equipment, primary_muscles, secondary_muscles")
+        .eq("is_active", true)
+        .order("name")
+        .limit(1000);
+      if (error) throw error;
+      return (data ?? []) as ExerciseRow[];
+    },
+    staleTime: Infinity,
+    gcTime: 60 * 60 * 1000,
+    networkMode: "always",
+  });
+}
+
+/**
  * Paginated exercise list with optional filters.
  * Used in the exercise browser / search UI.
  */

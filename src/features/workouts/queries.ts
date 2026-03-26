@@ -10,10 +10,10 @@ import type { Workout, WorkoutCategory, WorkoutStep } from "@/types";
 function mapStepRow(row: any): WorkoutStep {
   return {
     id: row.id,
-    workoutId: row.workout_template_id || row.workout_id,
+    workoutId: row.workout_template_id,
     exerciseId: row.exercise_id ?? null,
     order: row.step_order,
-    title: row.title,
+    title: row.title ?? "",
     description: row.instruction_text ?? null,
     mediaUrl: row.media_url ?? null,
     durationSeconds: row.duration_seconds ?? null,

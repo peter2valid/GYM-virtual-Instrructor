@@ -33,10 +33,10 @@ export interface TenantStats {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapSession(row: any): SessionWithWorkout {
-  const wt = row.workout_templates ?? row.workouts ?? null;
+  const wt = row.workout_templates ?? null;
   return {
     id: row.id,
-    workoutId: row.workout_template_id ?? row.workout_id,
+    workoutId: row.workout_template_id,
     workoutTitle: wt?.title ?? "Unknown Workout",
     workoutCategory: wt?.category ?? "",
     workoutDifficulty: wt?.difficulty ?? "beginner",

@@ -117,9 +117,9 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
   const hasTimer = currentStep.durationSeconds !== null;
 
   return (
-    <div className="flex min-h-screen flex-col bg-background selection:bg-primary/20">
+    <div className="flex h-dvh flex-col overflow-hidden bg-background selection:bg-primary/20">
       {/* ── Immersive Media Area ────────────────────────────────────── */}
-      <div className="relative h-[48vh] w-full overflow-hidden bg-muted/20">
+      <div className="relative w-full flex-none overflow-hidden bg-muted/20" style={{ height: "min(38vh, 280px)" }}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={stepIndex}
@@ -174,8 +174,8 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
       </div>
 
       {/* ── Content Area ───────────────────────────────────────────── */}
-      <div className="flex flex-1 flex-col -mt-8 relative z-10 rounded-t-[2.5rem] bg-background">
-        <div className="mx-auto w-full max-w-xl px-6 pt-8 pb-32">
+      <div className="flex flex-1 flex-col -mt-6 relative z-10 rounded-t-[2rem] bg-background min-h-0">
+        <div className="mx-auto w-full max-w-xl flex-1 overflow-y-auto px-6 pt-6 pb-28" style={{ scrollbarWidth: "none" }}>
           {/* Progress Bar */}
           <div className="mb-8">
             <StepProgress current={stepIndex} total={steps.length} />
@@ -191,12 +191,12 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
               className="space-y-6"
             >
               {/* Step info */}
-              <div className="space-y-4 text-center">
-                <h1 className="text-3xl font-black tracking-tight text-foreground leading-tight px-4">
+              <div className="space-y-2 text-center">
+                <h1 className="text-2xl font-black tracking-tight text-foreground leading-tight px-2">
                   {currentStep.title}
                 </h1>
                 {currentStep.description && (
-                  <p className="text-base leading-relaxed text-muted-foreground max-w-sm mx-auto">
+                  <p className="text-sm leading-relaxed text-muted-foreground max-w-sm mx-auto">
                     {currentStep.description}
                   </p>
                 )}
@@ -217,8 +217,8 @@ export function SessionScreen({ workout, gymSlug }: SessionScreenProps) {
                       className="flex flex-col items-center gap-6 pt-2"
                     >
                       {/* Duration bubble */}
-                      <div className="flex flex-col items-center gap-2 rounded-[2.5rem] bg-card ring-1 ring-border/40 shadow-badge px-12 py-8">
-                        <span className="text-[5.5rem] font-black tabular-nums tracking-tighter leading-none text-foreground">
+                      <div className="flex flex-col items-center gap-1 rounded-[2rem] bg-card ring-1 ring-border/40 shadow-badge px-10 py-5">
+                        <span className="text-[4rem] font-black tabular-nums tracking-tighter leading-none text-foreground">
                           {fmtDuration(currentStep.durationSeconds!)}
                         </span>
                         <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
